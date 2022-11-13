@@ -1,11 +1,14 @@
 //jshint esversion:6
 const express = require('express');
 const bodyParser = require('body-parser');
+
 const mongoose = require('mongoose');
 
 if (process.env.NODE_ENV !== 'production') {
   require('dotenv').config();
 }
+
+
 // TO DO: Implement cors policy
 // const cors = require('cors')
 
@@ -29,10 +32,12 @@ app.use(
   })
 );
 app.use('/public', express.static('public'));
+
 mongoose
   .connect(process.env['MONGO_URI'])
   .then(() => console.log('db connceted'))
   .catch((err) => console.log(err));
+
 
 // Bad Request Error
 app.use((error, req, res, next) => {
