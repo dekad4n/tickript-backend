@@ -4,11 +4,11 @@ const express = require("express");
 const router = express.Router();
 
 router.get('/test', (req, res) => {
-    res.send("Test is successful!")
+    res.send("Test is successful!");
 });
 
 router.get('/badRequest', (req, res) => {
-    res.sendStatus(400)
+    res.sendStatus(400);
 });
 
 
