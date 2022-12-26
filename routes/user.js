@@ -14,18 +14,18 @@ router.get('/', async (req, res) => {
     res.json({ resp: 'user endpoint' });
     return;
   }
-  const walletID = req.query.publicAdress;
+  const walletID = req.query.publicAddress;
   if (walletID != null && check.validateWalletID(walletID)) {
     let user = await User.findOne({
-      id: req.query.publicAdress.toLocaleLowerCase(),
+      id: req.query.publicAddress.toLocaleLowerCase(),
     });
 
     if (user == null) {
       let nonce = uuid.v4();
 
       user = await User.create({
-        id: req.query.publicAdress.toLocaleLowerCase(),
-        username: req.query.publicAdress.toLocaleLowerCase(),
+        id: req.query.publicAddress.toLocaleLowerCase(),
+        username: req.query.publicAddress.toLocaleLowerCase(),
         nonce,
       });
 

@@ -18,6 +18,7 @@ const port = process.env.PORT;
 const testRoute = require('./routes/test');
 const authRoute = require('./routes/auth');
 const userRoute = require('./routes/user');
+const ticketRoute = require('./routes/ticket');
 
 var session = require('express-session');
 // app.use(cors)
@@ -45,6 +46,7 @@ app.use('/public', express.static('public'));
 app.use('/api', testRoute);
 app.use('/auth', authRoute);
 app.use('/user', userRoute);
+app.use('/ticket', ticketRoute);
 mongoose
   .connect(process.env['MONGO_URI'])
   .then(() => console.log('db connected'))

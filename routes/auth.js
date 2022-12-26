@@ -36,14 +36,14 @@ router.post('/login', async (req, res) => {
     return;
   }
 
-  const { nonce, key } = req.body;
+  const { nonce, signature } = req.body;
 
-  if (nonce == null || key == null) {
+  if (nonce == null || signature == null) {
     res.sendStatus(401);
     return;
   }
 
-  authenticate(nonce, key)
+  authenticate(nonce, signature)
     .then((user) => {
       if (user == null) {
         res.sendStatus(401);
