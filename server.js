@@ -8,7 +8,6 @@ if (process.env.NODE_ENV !== 'production') {
   require('dotenv').config();
 }
 
-
 // TO DO: Implement cors policy
 // const cors = require('cors')
 
@@ -17,9 +16,21 @@ const port = process.env.PORT;
 
 // Routes
 const testRoute = require('./routes/test');
+const authRoute = require('./routes/auth');
+const userRoute = require('./routes/user');
+const ticketRoute = require('./routes/ticket');
+const eventRoute = require('./routes/event');
 
-app.use('/api', testRoute);
+var session = require('express-session');
 // app.use(cors)
+app.use(
+  session({
+    secret: process.env.SESSION_KEY,
+    resave: false,
+    saveUninitialized: true,
+    cookie: { maxAge: 50000 },
+  })
+);
 app.use(
   bodyParser.urlencoded({
     extended: true,
@@ -33,11 +44,15 @@ app.use(
 );
 app.use('/public', express.static('public'));
 
+app.use('/api', testRoute);
+app.use('/auth', authRoute);
+app.use('/user', userRoute);
+app.use('/ticket', ticketRoute);
+app.use('/event', eventRoute);
 mongoose
   .connect(process.env['MONGO_URI'])
-  .then(() => console.log('db connceted'))
+  .then(() => console.log('db connected'))
   .catch((err) => console.log(err));
-
 
 // Bad Request Error
 app.use((error, req, res, next) => {
