@@ -14,7 +14,7 @@ async function authenticate(nonce, signature) {
       sig: signature,
     });
     let user = await User.findOne({
-      id: address,
+      publicAddress: address,
       nonce: nonce,
     });
     if (user == null) {
@@ -31,7 +31,7 @@ router.post('/login', async (req, res) => {
   console.log(req.session);
   if (req.session && req.session.user != null) {
     let re = req.session.user;
-    re['token'] = generateAccessToken(req.session.user.id);
+    re['token'] = generateAccessToken(req.session.user.publicAddress);
     res.json({ token: re.token }); //TODO: Change the structure
     return;
   }
@@ -52,7 +52,7 @@ router.post('/login', async (req, res) => {
 
       // Successful login
       req.session.user = user;
-      res.json({ token: generateAccessToken(user.id) });
+      res.json({ token: generateAccessToken(user.publicAddress) });
     })
     .catch((err) => {
       console.log('Auth error');
