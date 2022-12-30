@@ -15,7 +15,7 @@ const { createAlchemyWeb3 } = require('@alch/alchemy-web3');
 
 // Using HTTPS
 const web3 = createAlchemyWeb3(
-  'https://polygon-mumbai.g.alchemy.com/v2/jq6Um8Vdb_j-F0vwzpqBjvjHiz3-v5wy'
+  'https://polygon-mumbai.g.alchemy.com/v2/' + alchemyAPIKey
 );
 let MintContract = new web3.eth.Contract(
   contractABI.abi,
@@ -23,6 +23,41 @@ let MintContract = new web3.eth.Contract(
 );
 
 const router = express.Router();
+
+const getNFTMetadata = async (contract, token) => {
+  try {
+    const res = await web3.alchemy.getNftMetadata({
+      contractAddress: contract,
+      tokenId: token,
+    });
+    return res.metadata;
+  } catch (e) {
+    console.log(e);
+    return {};
+  }
+};
+
+router.get('/', async (req, res) => {
+  console.log(req.query);
+  const contract = req.query['contract'];
+  const token = req.query['token'];
+
+  if (!contract || !token) {
+    res.status(400);
+    res.json({ message: 'Contract address or token is not valid!' });
+    return;
+  }
+
+  const result = await getNFTMetadata(contract, token);
+  if (Object.keys(result).length === 0) {
+    res.status(404);
+    res.json({ message: 'Could not found such ticket' });
+    return;
+  }
+  res.status(200);
+  res.json({ result: result });
+});
+
 router.post('/mint', auth, uploadmw.any(), async (req, res) => {
   const { name, image } = req.body;
   const img_buffer = Buffer.from(image, 'base64');
@@ -50,7 +85,7 @@ router.post('/mint', auth, uploadmw.any(), async (req, res) => {
 
     transactionParameters = {
       to: ContractDetails.ContractAddress, // Required except during contract publications.
-      from: req.user.id, // must match user's active address.
+      from: req.user.publicAddress, // must match user's active address.
       data: data,
     };
     res.json(transactionParameters);

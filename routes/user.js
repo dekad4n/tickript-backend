@@ -2,11 +2,11 @@ const express = require('express');
 const { json } = require('express/lib/response');
 const User = require('../models/user');
 const uuid = require('uuid');
-const router = express.Router();
 var auth = require('../middlewares/auth');
 const formidable = require('formidable');
 const check = require('../middlewares/check');
 
+const router = express.Router();
 //TODO: logout
 
 router.get('/', async (req, res) => {
@@ -17,14 +17,14 @@ router.get('/', async (req, res) => {
   const walletID = req.query.publicAddress;
   if (walletID != null && check.validateWalletID(walletID)) {
     let user = await User.findOne({
-      id: req.query.publicAddress.toLocaleLowerCase(),
+      publicAddress: req.query.publicAddress.toLocaleLowerCase(),
     });
 
     if (user == null) {
       let nonce = uuid.v4();
 
       user = await User.create({
-        id: req.query.publicAddress.toLocaleLowerCase(),
+        publicAddress: req.query.publicAddress.toLocaleLowerCase(),
         username: req.query.publicAddress.toLocaleLowerCase(),
         nonce,
       });
@@ -40,5 +40,33 @@ router.get('/', async (req, res) => {
     res.send('-');
   }
 });
+const addIfDefined = (key, val, hashmap) => {
+  if (val !== undefined && val.length > 0) {
+    hashmap[key] = val;
+  }
+  return hashmap;
+};
 
+router.post('/update', auth, async (req, res) => {
+  const { username, name } = req.body;
+  if (username === undefined && name === undefined) {
+    res.status(400);
+    res.json({ user: req.user });
+    return;
+  }
+
+  let updatedUser = Object.assign({});
+  updatedUser = addIfDefined('username', username, updatedUser);
+  updatedUser = addIfDefined('name', name, updatedUser);
+  const user = await User.findOneAndUpdate(
+    {
+      publicAddress: req.user.publicAddress,
+    },
+    { $set: updatedUser }
+  );
+  const toSend = Object.assign({}, user.user, updatedUser);
+
+  res.status(200);
+  res.json({ user: toSend });
+});
 module.exports = router;

@@ -11,7 +11,7 @@ module.exports = async function auth(req, res, next) {
     if (err) return res.sendStatus(403);
 
     req.user = await User.findOne({
-      id: user.username,
+      publicAddress: user.username,
     });
 
     next();
