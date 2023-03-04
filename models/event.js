@@ -13,6 +13,11 @@ const eventSchema = new Schema({
   description: String,
   logo: String,
   banner: String,
+  startDate: {
+    type: Date,
+    required: true,
+  },
+  endDate: Date,
 });
 
 const Event = mongoose.model('Event', eventSchema);

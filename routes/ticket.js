@@ -3,13 +3,14 @@ const Hash = require('ipfs-only-hash');
 const FormData = require('form-data');
 const fs = require('fs');
 const axios = require('axios');
-const ContractDetails = require('../contracts/ContractDetails');
-const contractABI = require('../contracts/TicketMint.json');
+
 const auth = require('../middlewares/auth');
 const multer = require('multer');
 const uploadmw = multer();
 require('dotenv').config();
 
+const ContractDetails = require('../contracts/ContractDetails');
+const contractABI = require('../contracts/TicketMint.json');
 const alchemyAPIKey = process.env['ALCHEMY_API_KEY'];
 const { createAlchemyWeb3 } = require('@alch/alchemy-web3');
 
@@ -38,7 +39,6 @@ const getNFTMetadata = async (contract, token) => {
 };
 
 router.get('/', async (req, res) => {
-  console.log(req.query);
   const contract = req.query['contract'];
   const token = req.query['token'];
 
@@ -60,7 +60,9 @@ router.get('/', async (req, res) => {
 
 router.post('/mint', auth, uploadmw.any(), async (req, res) => {
   const { name, image } = req.body;
+  let { amount } = req.body;
   const img_buffer = Buffer.from(image, 'base64');
+  if (!amount) amount = 1;
 
   let img_hash = await upload(img_buffer);
 
@@ -74,13 +76,11 @@ router.post('/mint', auth, uploadmw.any(), async (req, res) => {
 
   const json_buffer = Buffer.from(JSON.stringify(send_json), 'utf-8');
   let json_hash = await upload(json_buffer);
-  // let contract1 = Contract;
-  // console.log(contract1);
   let transactionParameters = {};
 
   try {
     let data = MintContract.methods
-      .mintNFT(`ipfs://${json_hash.Hash}`, 1)
+      .mintNFT(`ipfs://${json_hash.Hash}`, amount)
       .encodeABI();
 
     transactionParameters = {

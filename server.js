@@ -20,7 +20,8 @@ const authRoute = require('./routes/auth');
 const userRoute = require('./routes/user');
 const ticketRoute = require('./routes/ticket');
 const eventRoute = require('./routes/event');
-
+const utilsRoute = require('./routes/utils');
+const marketRoute = require('./routes/market');
 var session = require('express-session');
 // app.use(cors)
 app.use(
@@ -49,6 +50,8 @@ app.use('/auth', authRoute);
 app.use('/user', userRoute);
 app.use('/ticket', ticketRoute);
 app.use('/event', eventRoute);
+app.use('/utils', utilsRoute);
+app.use('/market', marketRoute);
 mongoose
   .connect(process.env['MONGO_URI'])
   .then(() => console.log('db connected'))
