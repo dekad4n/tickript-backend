@@ -12,10 +12,9 @@ router.get('/', async (req, res) => {
     res.json({ message: 'Event id is invalid' });
   }
 
-  const result = await Event.findById(id);
-
+  const event = await Event.findById(id);
   res.status(200);
-  res.json(result);
+  res.json({ event });
 });
 
 router.post('/create', auth, async (req, res) => {
