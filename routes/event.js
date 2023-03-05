@@ -10,6 +10,7 @@ const res = require('express/lib/response');
 const { eventNames } = require('process');
 const { errors } = require('web3-core-helpers');
 const cloudinary = require('cloudinary').v2;
+const streamifier = require('streamifier');
 
 const cloudinaryURL = process.env['CLOUDINARY_URL'];
 cloudinary.config({
@@ -33,43 +34,52 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/create', auth, async (req, res) => {
-  const form = formidable({ multiples: true });
-  form.parse(req, async (err, fields, files) => {
-    if (err) {
-      next(err);
-      return;
-    }
-    const name = fields.name;
-    const description = fields.description;
+  const {
+    coverImageEncoded,
+    title,
+    startDate,
+    endDate,
+    startTime,
+    endTime,
+    category,
+    description,
+  } = req.body;
 
-    if (!name) {
-      res.status(400);
-      res.json({ message: 'Required parameters are not valid!' });
-      return;
-    }
-    let logoURL = '';
-    if (files.logo) {
-      logoURL = await cloudinary.uploader.upload(files.logo.filepath);
-      logoURL = logoURL.url;
-    }
-    let bannerURL = '';
-    if (files.banner) {
-      bannerURL = await cloudinary.uploader.upload(files.banner.filepath);
-      bannerURL = bannerURL.url;
-    }
-    const result = await Event.create({
-      name: name,
-      description: description,
-      owner: req.user.publicAddress,
-      logo: logoURL,
-      banner: bannerURL,
-      startDate: fields?.startDate,
-      endDate: fields?.endDate,
-    });
+  if (
+    !coverImageEncoded ||
+    !title ||
+    !startDate ||
+    !endDate ||
+    !startTime ||
+    !endTime ||
+    !category ||
+    !description
+  ) {
+    res.status(400);
+    res.json({ message: 'Required parameters are not valid!' });
+    return;
+  }
 
-    res.status(200);
-    res.json(result);
+  var coverImageBytes = Buffer.from(coverImageEncoded, 'base64');
+
+  let result = await uploadFromBuffer(coverImageBytes);
+
+  coverImageURL = result.url;
+
+  const event = await Event.create({
+    owner: req.user.publicAddress,
+    coverImageURL,
+    title,
+    startDate,
+    endDate,
+    startTime,
+    endTime,
+    category,
+    description,
   });
+
+  res.status(200);
+  res.json({ event });
 });
 
 router.put('/update', auth, async (req, res) => {
@@ -115,6 +125,25 @@ router.put('/update', auth, async (req, res) => {
     res.json({ ...updatedEvent, _id: event._id });
   });
 });
+
+let uploadFromBuffer = (buffer) => {
+  return new Promise((resolve, reject) => {
+    let cld_upload_stream = cloudinary.uploader.upload_stream(
+      {
+        folder: 'foo',
+      },
+      (error, result) => {
+        if (result) {
+          resolve(result);
+        } else {
+          reject(error);
+        }
+      }
+    );
+
+    streamifier.createReadStream(buffer).pipe(cld_upload_stream);
+  });
+};
 
 const handleDelete = async (url) => {
   const splitted = url.split('/');
