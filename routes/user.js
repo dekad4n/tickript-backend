@@ -1,13 +1,19 @@
 const express = require('express');
 const { json } = require('express/lib/response');
-const User = require('../models/user');
+
 const uuid = require('uuid');
 var auth = require('../middlewares/auth');
 const formidable = require('formidable');
 const check = require('../middlewares/check');
 
 const router = express.Router();
-//TODO: logout
+
+const User = require('../models/user');
+const Event = require('../models/event');
+
+const axios = require('axios');
+const ContractDetails = require('../contracts/ContractDetails');
+const alchemyAPIKey = process.env['ALCHEMY_API_KEY'];
 
 router.get('/', async (req, res) => {
   if (Object.keys(req.query).length == 0) {
@@ -53,6 +59,7 @@ router.post('/update', auth, async (req, res) => {
     res.status(400);
     res.json({ user: req.user });
     return;
+    set;
   }
 
   let updatedUser = Object.assign({});
@@ -68,5 +75,34 @@ router.post('/update', auth, async (req, res) => {
 
   res.status(200);
   res.json({ user: toSend });
+});
+
+router.get('/events', async (req, res) => {
+  if (!req.query.publicAddress) {
+    res.status(400);
+    res.json({ message: 'You should provide public address' });
+    return;
+  }
+  const publicAddress = req.query.publicAddress;
+  try {
+    const result = await Event.find({ owner: publicAddress });
+    res.status(200);
+    res.json(result);
+  } catch (e) {}
+});
+
+router.get('/tickets', async (req, res) => {
+  const publicAddress = req.query.publicAddress;
+  const result = await axios.get(
+    'https://polygon-mumbai.g.alchemy.com/nft/v2/' + alchemyAPIKey + '/getNFTs',
+    {
+      params: {
+        owner: publicAddress,
+        withMetadata: true,
+        contractAddresses: [ContractDetails.ContractAddress],
+      },
+    }
+  );
+  res.json(result.data.ownedNfts);
 });
 module.exports = router;
