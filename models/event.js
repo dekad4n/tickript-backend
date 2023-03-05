@@ -6,7 +6,7 @@ const eventSchema = new Schema({
     type: String,
     required: true,
   },
-  coverImage: {
+  coverImageEncoded: {
     type: String,
     required: true,
   },

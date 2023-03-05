@@ -18,22 +18,47 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/create', auth, async (req, res) => {
-  const { name } = req.body;
+  const {
+    coverImageEncoded,
+    title,
+    startDate,
+    endDate,
+    startTime,
+    endTime,
+    category,
+    description,
+  } = req.body;
 
-  if (!name) {
+  if (
+    !coverImageEncoded ||
+    !title ||
+    !startDate ||
+    !endDate ||
+    !startTime ||
+    !endTime ||
+    !category ||
+    !description
+  ) {
+    console.log('asdasd');
     res.status(400);
     res.json({ message: 'Required parameters are not valid!' });
     return;
   }
   // TO DO: IMPLEMENT FILE UPLOAD
-
-  const result = await Event.create({
-    name: name,
+  const event = await Event.create({
     owner: req.user.publicAddress,
+    coverImageEncoded,
+    title,
+    startDate,
+    endDate,
+    startTime,
+    endTime,
+    category,
+    description,
   });
 
   res.status(200);
-  res.json(result);
+  res.json({ event });
 });
 
 module.exports = router;
