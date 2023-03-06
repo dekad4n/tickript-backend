@@ -15,6 +15,17 @@ const axios = require('axios');
 const ContractDetails = require('../contracts/ContractDetails');
 const alchemyAPIKey = process.env['ALCHEMY_API_KEY'];
 
+const cloudinary = require('cloudinary').v2;
+const streamifier = require('streamifier');
+
+const cloudinaryURL = process.env['CLOUDINARY_URL'];
+cloudinary.config({
+  cloud_name: process.env['CLOUDINARY_NAME'],
+  api_key: process.env['CLOUDINARY_API_KEY'],
+  api_secret: process.env['CLOUDINARY_SECRET'],
+  secure: true,
+});
+
 router.get('/', async (req, res) => {
   if (Object.keys(req.query).length == 0) {
     res.json({ resp: 'user endpoint' });
@@ -53,18 +64,48 @@ const addIfDefined = (key, val, hashmap) => {
   return hashmap;
 };
 
+let uploadFromBuffer = (buffer) => {
+  return new Promise((resolve, reject) => {
+    let cld_upload_stream = cloudinary.uploader.upload_stream(
+      {
+        folder: 'foo',
+      },
+      (error, result) => {
+        if (result) {
+          resolve(result);
+        } else {
+          reject(error);
+        }
+      }
+    );
+
+    streamifier.createReadStream(buffer).pipe(cld_upload_stream);
+  });
+};
+
 router.post('/update', auth, async (req, res) => {
-  const { username, name } = req.body;
+  const { username, name, avatar } = req.body;
   if (username === undefined && name === undefined) {
     res.status(400);
     res.json({ user: req.user });
     return;
     set;
   }
+  var avatarURL = '';
+  if (avatar) {
+    var avatarImageBytes = Buffer.from(avatar, 'base64');
+
+    let result = await uploadFromBuffer(avatarImageBytes);
+
+    avatarURL = result.url;
+    console.log(avatarURL);
+  }
 
   let updatedUser = Object.assign({});
   updatedUser = addIfDefined('username', username, updatedUser);
   updatedUser = addIfDefined('name', name, updatedUser);
+  updatedUser = addIfDefined('avatar', avatarURL, updatedUser);
+
   const user = await User.findOneAndUpdate(
     {
       publicAddress: req.user.publicAddress,
