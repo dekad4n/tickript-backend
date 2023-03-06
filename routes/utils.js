@@ -8,10 +8,13 @@ router.get('/search', async (req, res) => {
   let { search, id, page, pageLimit } = req.query;
   if (!page) page = 1;
   if (!pageLimit) pageLimit = 10;
+
   if (!search && !id) {
-    res.status(400);
-    res.json({ message: 'Provide search query or an id!' });
-    return;
+    const events = await Event.find({})
+      .skip((parseInt(page) - 1) * pageLimit)
+      .limit(pageLimit);
+
+    res.json(events);
   }
   try {
     if (id) {
@@ -21,7 +24,7 @@ router.get('/search', async (req, res) => {
     } else {
       try {
         const events = await Event.find({
-          name: { $regex: `(?i)${search}` },
+          title: { $regex: `(?i)${search}` },
         })
           .skip((parseInt(page) - 1) * pageLimit)
           .limit(pageLimit);
