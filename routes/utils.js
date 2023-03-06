@@ -5,30 +5,33 @@ const Event = require('../models/event');
 const router = express.Router();
 
 router.get('/search', async (req, res) => {
-  let { search, id, page, pageLimit } = req.query;
+  let { searchTitle, id, page, pageLimit } = req.query;
   if (!page) page = 1;
   if (!pageLimit) pageLimit = 10;
 
-  if (!search && !id) {
+  if (!searchTitle && !id) {
     const events = await Event.find({})
       .skip((parseInt(page) - 1) * pageLimit)
       .limit(pageLimit);
+    // console.log('events:', events);
 
-    res.json(events);
+    res.json({ events });
+    return;
+
   }
   try {
     if (id) {
-      const event = await Event.find({ _id: id });
-      res.json(event);
+      const events = await Event.find({ _id: id });
+      res.json({ events });
       return;
     } else {
       try {
         const events = await Event.find({
-          title: { $regex: `(?i)${search}` },
+          title: { $regex: `(?i)${searchTitle}` },
         })
           .skip((parseInt(page) - 1) * pageLimit)
           .limit(pageLimit);
-        res.json(events);
+        res.json({ events });
       } catch (e) {
         res.status(500);
         res.json({ message: 'There is something wrong' });
