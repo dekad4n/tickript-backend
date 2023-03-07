@@ -7,6 +7,7 @@ const axios = require('axios');
 const auth = require('../middlewares/auth');
 const multer = require('multer');
 const uploadmw = multer();
+const { Readable } = require('stream');
 require('dotenv').config();
 
 const ContractDetails = require('../contracts/ContractDetails');
@@ -59,14 +60,16 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/mint', auth, uploadmw.any(), async (req, res) => {
-  const { name, image } = req.body;
+  const { name, image, eventId } = req.body;
   let { amount } = req.body;
   const img_buffer = Buffer.from(image, 'base64');
   if (!amount) amount = 1;
 
   let img_hash = await upload(img_buffer);
+  console.log(img_hash);
 
-  if (img_hash.Status != 'Success') {
+  if (!img_hash || img_hash.Status != 'Success') {
+    res.json({ message: 'Unable to pin to IPFS' });
     return;
   }
   let send_json = {
@@ -80,7 +83,7 @@ router.post('/mint', auth, uploadmw.any(), async (req, res) => {
 
   try {
     let data = MintContract.methods
-      .mintNFT(`ipfs://${json_hash.Hash}`, amount)
+      .mintNFT(`ipfs://${json_hash.Hash}`, eventId, amount)
       .encodeABI();
 
     transactionParameters = {
@@ -108,6 +111,7 @@ async function upload(data_buffer) {
 
     const url = `https://api.pinata.cloud/pinning/pinFileToIPFS`;
     let data = new FormData();
+    console.log(hash, 'hash');
     data.append('file', fs.createReadStream('/tmp/' + hash));
 
     let response = await axios.post(url, data, {
@@ -125,7 +129,7 @@ async function upload(data_buffer) {
         throw err;
       }
     });
-
+    console.log(response.data, 'data');
     if (response.data['IpfsHash'] == hash) {
       return {
         Status: 'Success',
