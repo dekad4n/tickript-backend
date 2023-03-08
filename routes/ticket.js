@@ -66,7 +66,7 @@ router.post('/mint', auth, uploadmw.any(), async (req, res) => {
   if (!amount) amount = 1;
 
   let img_hash = await upload(img_buffer);
-  console.log(img_hash);
+  console.log('img_hash:', img_hash);
 
   if (!img_hash || img_hash.Status != 'Success') {
     res.json({ message: 'Unable to pin to IPFS' });
@@ -78,7 +78,7 @@ router.post('/mint', auth, uploadmw.any(), async (req, res) => {
   };
 
   const json_buffer = Buffer.from(JSON.stringify(send_json), 'utf-8');
-  let json_hash = await upload(json_buffer);
+  let json_hash = await uploadJSON(json_buffer);
   let transactionParameters = {};
 
   try {
@@ -138,6 +138,32 @@ async function upload(data_buffer) {
     } else {
       throw 'Hash mismatch ' + response.data['IpfsHash'] + '!=' + hash;
     }
+  } catch (err) {
+    console.log('Error');
+    console.log(err);
+  }
+}
+
+async function uploadJSON(data_buffer) {
+  try {
+    console.log(data_buffer);
+
+    const url = `https://api.pinata.cloud/pinning/pinJSONtoIPFS`;
+
+    console.log(hash, 'hash');
+
+    let response = await axios.post(url, data_buffer, {
+      maxBodyLength: 'Infinity', //this is needed to prevent axios from erroring out with large files
+      headers: {
+        'Content-Type': `application/json; boundary=${data_buffer._boundary}`,
+        pinata_api_key: process.env['PINATA_API_KEY'],
+        pinata_secret_api_key: process.env['PINATA_SECRET_API_KEY'],
+      },
+    });
+
+    console.log(response.data, 'data');
+
+    return response.data.hash;
   } catch (err) {
     console.log('Error');
     console.log(err);
