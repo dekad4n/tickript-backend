@@ -17,7 +17,6 @@ router.get('/search', async (req, res) => {
 
     res.json({ events });
     return;
-
   }
   try {
     if (id) {
