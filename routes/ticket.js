@@ -64,11 +64,14 @@ router.post('/mint', auth, uploadmw.any(), async (req, res) => {
   let { amount } = req.body;
   if (!amount) amount = 1;
 
+  // 1-Upload image to IPFS and get its hash
   const img_buffer = Buffer.from(image, 'base64');
 
   let imageUploadRes = await uploadFromBuffer(img_buffer);
 
-  if (!imageUploadRes || imageUploadRes.Status != 'Success') {
+  console.log('imageUploadRes:', imageUploadRes);
+
+  if (!imageUploadRes) {
     console.error({ message: 'Unable to pin image to IPFS' });
     res.json({ message: 'Unable to pin image to IPFS' });
     return;
@@ -77,6 +80,7 @@ router.post('/mint', auth, uploadmw.any(), async (req, res) => {
   let img_hash = imageUploadRes.IpfsHash;
   console.log('img_hash:', img_hash);
 
+  // 2-Upload JSON to IPFS and get its hash
   let send_json = {
     name: name,
     image: 'ipfs://' + img_hash,
@@ -86,7 +90,7 @@ router.post('/mint', auth, uploadmw.any(), async (req, res) => {
 
   let jsonUploadRes = await uploadFromBuffer(json_buffer);
 
-  if (!jsonUploadRes || jsonUploadRes.Status != 'Success') {
+  if (!jsonUploadRes) {
     console.error({ message: 'Unable to pin JSON to IPFS' });
     res.json({ message: 'Unable to pin JSON to IPFS' });
     return;
@@ -95,6 +99,7 @@ router.post('/mint', auth, uploadmw.any(), async (req, res) => {
   let json_hash = jsonUploadRes.IpfsHash;
   console.log('json_hash:', json_hash);
 
+  // Interact with Smart Contract to mint
   let transactionParameters = {};
 
   try {
@@ -138,7 +143,7 @@ const uploadFromBuffer = async (buffer) => {
         },
       }
     );
-    console.log('res:', res);
+    // console.log('res.data:', res.data);
     return res.data;
   } catch (error) {
     console.log(error);
