@@ -69,8 +69,6 @@ router.post('/mint', auth, uploadmw.any(), async (req, res) => {
 
   let imageUploadRes = await uploadFromBuffer(img_buffer);
 
-  console.log('imageUploadRes:', imageUploadRes);
-
   if (!imageUploadRes) {
     console.error({ message: 'Unable to pin image to IPFS' });
     res.json({ message: 'Unable to pin image to IPFS' });

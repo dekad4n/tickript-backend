@@ -10,7 +10,6 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 contract TicketMint is ERC721URIStorage, ERC721Burnable {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
-    Counters.Counter private _eventIds;
     address contractAddress;
     mapping(address => bool) owners;
     mapping(address => bool) EventOwnerAddresses;
@@ -33,12 +32,9 @@ contract TicketMint is ERC721URIStorage, ERC721Burnable {
         address ticketOwner
     );
 
-    function mintNFT(string memory tokenUri, uint256 supply)
+    function mintNFT(string memory tokenUri, uint256 eventId,uint256 supply)
         public isEventOwner(msg.sender)
-        returns (uint256 eventID)
     {
-        _eventIds.increment();
-        uint256 eventId=_eventIds.current();
         uint256 newItemId;
         for (uint256 i = 0; i < supply; i++) {
             _tokenIds.increment();
@@ -50,7 +46,6 @@ contract TicketMint is ERC721URIStorage, ERC721Burnable {
             tokenIDtoeventID[newItemId]=eventId;
         }
         emit Mint(eventId,supply,msg.sender);
-        return (eventId);
     }
 
     function transferToken(
