@@ -40,16 +40,17 @@ const getNFTMetadata = async (contract, token) => {
 };
 
 router.get('/', async (req, res) => {
-  const contract = req.query['contract'];
   const token = req.query['token'];
 
-  if (!contract || !token) {
+  if (!token) {
     res.status(400);
     res.json({ message: 'Contract address or token is not valid!' });
     return;
   }
 
-  const result = await getNFTMetadata(contract, token);
+  const result = await getNFTMetadata(ContractDetails.ContractAddress, token);
+  console.log('getNFTMetadata result:', result);
+
   if (Object.keys(result).length === 0) {
     res.status(404);
     res.json({ message: 'Could not found such ticket' });
@@ -147,31 +148,5 @@ const uploadFromBuffer = async (buffer) => {
     console.log(error);
   }
 };
-
-async function uploadJSON(data_buffer) {
-  try {
-    console.log(data_buffer);
-
-    const url = `https://api.pinata.cloud/pinning/pinJSONtoIPFS`;
-
-    console.log(hash, 'hash');
-
-    let response = await axios.post(url, data_buffer, {
-      maxBodyLength: 'Infinity', //this is needed to prevent axios from erroring out with large files
-      headers: {
-        'Content-Type': `application/json; boundary=${data_buffer._boundary}`,
-        pinata_api_key: process.env['PINATA_API_KEY'],
-        pinata_secret_api_key: process.env['PINATA_SECRET_API_KEY'],
-      },
-    });
-
-    console.log(response.data, 'data');
-
-    return response.data.hash;
-  } catch (err) {
-    console.log('Error');
-    console.log(err);
-  }
-}
 
 module.exports = router;

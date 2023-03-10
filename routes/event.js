@@ -12,6 +12,20 @@ const { errors } = require('web3-core-helpers');
 const cloudinary = require('cloudinary').v2;
 const streamifier = require('streamifier');
 
+const ContractDetails = require('../contracts/ContractDetails');
+const contractABI = require('../contracts/TicketMint.json');
+const alchemyAPIKey = process.env['ALCHEMY_API_KEY'];
+const { createAlchemyWeb3 } = require('@alch/alchemy-web3');
+
+// Using HTTPS
+const web3 = createAlchemyWeb3(
+  'https://polygon-mumbai.g.alchemy.com/v2/' + alchemyAPIKey
+);
+let MintContract = new web3.eth.Contract(
+  contractABI.abi,
+  ContractDetails.ContractAddress
+);
+
 const cloudinaryURL = process.env['CLOUDINARY_URL'];
 cloudinary.config({
   cloud_name: process.env['CLOUDINARY_NAME'],
@@ -27,12 +41,20 @@ router.get('/', async (req, res) => {
     res.json({ message: 'Event id is invalid' });
   }
 
+  // Get event details from MongoDB
   const event = await Event.findById(id);
 
+  // Get ticket details from Mint Contract
+  let data = await MintContract.methods
+    .getEventTicketList(event.integerId)
+    .call();
+
+  console.log('data:', data);
+
+  ///TODO: Process ticket data
+
   res.status(200);
-  res.json({
-    event,
-  });
+  res.json({ event });
 });
 
 router.post('/create', auth, async (req, res) => {

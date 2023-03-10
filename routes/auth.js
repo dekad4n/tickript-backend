@@ -7,6 +7,20 @@ const jwt = require('jsonwebtoken');
 const uuid = require('uuid');
 const auth = require('../middlewares/auth');
 
+const ContractDetails = require('../contracts/ContractDetails');
+const contractABI = require('../contracts/TicketMint.json');
+const alchemyAPIKey = process.env['ALCHEMY_API_KEY'];
+const { createAlchemyWeb3 } = require('@alch/alchemy-web3');
+
+// Using HTTPS
+const web3 = createAlchemyWeb3(
+  'https://polygon-mumbai.g.alchemy.com/v2/' + alchemyAPIKey
+);
+let MintContract = new web3.eth.Contract(
+  contractABI.abi,
+  ContractDetails.ContractAddress
+);
+
 async function authenticate(nonce, signature) {
   try {
     const address = recoverPersonalSignature.recoverPersonalSignature({
@@ -32,7 +46,15 @@ router.post('/login', async (req, res) => {
   if (req.session && req.session.user != null) {
     let re = req.session.user;
     re['token'] = generateAccessToken(req.session.user.publicAddress);
-    res.json({ token: re.token }); //TODO: Change the structure
+
+    // Check if the user is event organiser (whitelisted)
+    const isWhitelisted = await MintContract.methods
+      .verifyEventOwner(re.session.user.publicAddress)
+      .call();
+
+    console.log('isWhitelisted:', isWhitelisted);
+
+    res.json({ token: re.token, isWhitelisted: isWhitelisted }); //TODO: Change the structure
     return;
   }
 
@@ -44,7 +66,7 @@ router.post('/login', async (req, res) => {
   }
 
   authenticate(nonce, signature)
-    .then((user) => {
+    .then(async (user) => {
       if (user == null) {
         res.sendStatus(401);
         return;
@@ -52,10 +74,21 @@ router.post('/login', async (req, res) => {
 
       // Successful login
       req.session.user = user;
-      res.json({ token: generateAccessToken(user.publicAddress) });
+
+      // Check if the user is event organiser (whitelisted)
+      const isWhitelisted = await MintContract.methods
+        .verifyEventOwner(user.publicAddress)
+        .call();
+
+      console.log('isWhitelisted:', isWhitelisted);
+
+      res.json({
+        token: generateAccessToken(user.publicAddress),
+        isWhitelisted: isWhitelisted,
+      });
     })
     .catch((err) => {
-      console.log('Auth error');
+      console.log('Auth error', err);
       res.sendStatus(401);
     });
 });

@@ -21,17 +21,27 @@ contract TicketMint is ERC721URIStorage, ERC721Burnable {
         owners[msg.sender]=true;
     }
 
+    // ------------------------------------------------------------------------------------ MODIFIERS 
     modifier onlyOwner() {
         require(owners[msg.sender], "Only contract owners!");
         _;
     }
 
+    modifier isEventOwner(address _address) {
+        require(EventOwnerAddresses[_address], "You need to be whitelisted");
+        _;
+    }
+
+
+    // ------------------------------------------------------------------------------------ EVENTS
     event Mint(
         uint256 indexed eventID,
         uint256 supply,
         address ticketOwner
     );
 
+
+    // ------------------------------------------------------------------------------------ FUNCTIONS
     function mintNFT(string memory tokenUri, uint256 eventId,uint256 supply)
         public isEventOwner(msg.sender)
     {
@@ -85,29 +95,30 @@ contract TicketMint is ERC721URIStorage, ERC721Burnable {
         return _tokenIds.current();
     }
 
+    // Grants the given public address with contract-ownership
     function addOwner(address _addressToOwners) public onlyOwner {
         owners[_addressToOwners] = true;
     }
 
+    // Grants the given public address with whitelist (Only event organiser will be whitelisted)
     function addEventOwner(address _address) public onlyOwner {
         EventOwnerAddresses[_address] = true;
     }
 
+    // Returns true if the given address is whitelisted (is it event organiser?)
     function verifyEventOwner(address _address) public view returns (bool){
         bool userIsWhitelisted = EventOwnerAddresses[_address];
         return userIsWhitelisted;
     }
 
+    // Returns the list of ticket ids(tokens) belong to a given eventId
     function getEventTicketList(uint eventid) public view returns( uint256 [] memory){
         return EventIDtotokenID[eventid];
     }
 
+    // Returns the eventId which the given ticket belongs to
     function getEventID(uint tokenid) public view returns( uint256){
         return tokenIDtoeventID[tokenid];
     }
 
-    modifier isEventOwner(address _address) {
-        require(EventOwnerAddresses[_address], "You need to be whitelisted");
-        _;
-    }
 }
