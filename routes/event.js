@@ -44,17 +44,20 @@ router.get('/', async (req, res) => {
   // Get event details from MongoDB
   const event = await Event.findById(id);
 
-  // Get ticket details from Mint Contract
-  let data = await MintContract.methods
-    .getEventTicketList(event.integerId)
-    .call();
-
-  console.log('data:', data);
-
-  ///TODO: Process ticket data
-
   res.status(200);
   res.json({ event });
+});
+
+router.get('/minted-event-ticket-tokens', async (req, res) => {
+  const integerId = req.query['integerId'];
+
+  // Get ticket details from Mint Contract
+  let mintedEventTicketTokens = await MintContract.methods
+    .getEventTicketList(integerId)
+    .call();
+
+  res.json({ mintedEventTicketTokens });
+  return;
 });
 
 router.post('/create', auth, async (req, res) => {
