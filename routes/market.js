@@ -20,9 +20,19 @@ const isHex = (num) => {
   return Boolean(num.match(/^0x[0-9a-f]+$/i));
 };
 
+router.get('/market-item', async (req, res) => {
+  const tokenId = req.query.tokenId;
+
+  const data = await marketContract.methods.NFTItem(tokenId).call();
+
+  console.log(data);
+  res.json('ok');
+  return;
+});
+
 router.post('/sell', auth, async (req, res) => {
-  const { contract, tokenID, price } = req.body;
-  if (!tokenID || !contract || !price) {
+  const { tokenID, price } = req.body;
+  if (!tokenID || !price) {
     res.status(400).json({ message: 'Bad request' });
     return;
   }
@@ -37,7 +47,7 @@ router.post('/sell', auth, async (req, res) => {
 
   let transactionParameters = {
     to: ContractDetails.MarketContractAddress, // Required except during contract publications.
-    from: req.user.id, // must match user's active address.
+    from: req.user.publicAddress, // must match user's active address.
     value: web3.utils.toWei('0.01', 'ether'),
   };
 
