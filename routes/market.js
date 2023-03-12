@@ -66,38 +66,30 @@ router.get('market-items-sold', async (req, res) => {
 
 // To list minted NFT's on market
 router.post('/sell', auth, async (req, res) => {
-  const { tokenID, price } = req.body;
-  if (!tokenID || !price) {
-    res.status(400).json({ message: 'Bad request' });
-    return;
-  }
-  let { ticketType, amount } = req.body;
-  if (!ticketType) ticketType = '';
-  if (!amount) amount = 1;
+  let { eventId, price, amount } = req.body;
 
-  let tokenInt = tokenID;
-  if (isHex(tokenID)) {
-    tokenInt = parseInt(tokenID, 16);
-  }
+  eventId = parseInt(eventId);
+  amount = parseInt(amount);
 
   let transactionParameters = {
     to: ContractDetails.MarketContractAddress, // Required except during contract publications.
     from: req.user.publicAddress, // must match user's active address.
-    value: web3.utils.toWei('0.01', 'ether'),
+    value: web3.utils.toWei(price, 'ether'),
   };
 
   transaction = await marketContract.methods
     .createMarketItem(
       web3.utils.toWei(price, 'ether'),
       ContractDetails.ContractAddress,
-      tokenInt,
-      ticketType,
+      'normal',
+      eventId,
       amount
     )
     .encodeABI();
 
   transactionParameters['data'] = transaction;
 
+  console.log(transactionParameters);
   res.json(transactionParameters);
   return;
 });

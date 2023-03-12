@@ -22,6 +22,7 @@ contract TicketMarket is ReentrancyGuard {
     struct MarketItem {
         address nftContract;
         uint256 tokenID;
+        uint256 eventID;
         address payable ticketOwner;
         address payable eventOwner;
         address payable seller;
@@ -36,13 +37,11 @@ contract TicketMarket is ReentrancyGuard {
 
     event MarketItemCreation(
         uint256 indexed tokenID,
-        address ticketOwner,
+        uint256 eventID,
         address eventOwner,
         address seller,
         uint256 price,
-        string ticketType,
-        bool sold,
-        bool soldBefore
+        string ticketType
     );
 
     event MarketItemAfterSale(
@@ -64,42 +63,55 @@ contract TicketMarket is ReentrancyGuard {
         uint256 price
     );
 
+    function isInMarket(uint256 tokenid) public view returns(bool){
+        if(tokenToItem[tokenid]>0){
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+
     ////This function operates putting an NFT on the market which is not sold before, it is a new item.
     function createMarketItem(
         uint256 price,
         address NftCont,
-        uint256 tokenId,
         string memory ticketType,
-        uint256 amount
+        uint256 eventID,
+        uint256 supply
     ) public payable nonReentrant {
         require(price > 0, "Too low");
-
-        for (uint256 i = 0; i < amount; i++) {
+        uint256[] memory ticketList;
+        TicketMint tokenContract = TicketMint(NftCont);
+        ticketList = tokenContract.getEventTicketList(eventID);
+        uint256 total=0;
+        for (uint256 i = 0 ; i < ticketList.length && total < supply; i++) {
             _itemsID.increment();
             uint256 currentItemID = _itemsID.current();
-            tokenToItem[tokenId + i] = currentItemID;
-            idMarketItem[currentItemID] = MarketItem(
-                NftCont,
-                tokenId + i,
-                payable(address(this)),
-                payable(msg.sender),
-                payable(msg.sender),
-                price,
-                ticketType,
-                false,
-                false
-            );
-            IERC721(NftCont).transferFrom(msg.sender, address(this), tokenId);
-            emit MarketItemCreation(
-                tokenId + i,
-                address(this),
-                msg.sender,
-                msg.sender,
-                price,
-                ticketType,
-                false,
-                false
-            );
+            uint256 tokenId=ticketList[i];
+            if (!isInMarket(tokenId)){
+                tokenToItem[tokenId] = currentItemID;
+                idMarketItem[currentItemID] = MarketItem(
+                    NftCont,
+                    tokenId,
+                    eventID,
+                    payable(address(this)),
+                    payable(msg.sender),
+                    payable(msg.sender),
+                    price,
+                    ticketType,
+                    false,
+                    false
+                );
+                IERC721(NftCont).transferFrom(msg.sender, address(this), tokenId);
+                emit MarketItemCreation(
+                    tokenId,
+                    eventID,
+                    msg.sender,
+                    msg.sender,
+                    price,
+                    ticketType);
+            }
         }
     }
 
@@ -283,7 +295,6 @@ contract TicketMarket is ReentrancyGuard {
         return items;
     }
 
-    // To get ticket MarketItem details by tokenId
     function NFTItem(uint256 tokenId) public view returns (MarketItem memory) {
         uint256 item = tokenToItem[tokenId];
         return idMarketItem[item];
