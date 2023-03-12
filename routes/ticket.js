@@ -83,6 +83,7 @@ router.post('/mint', auth, uploadmw.any(), async (req, res) => {
   let send_json = {
     name: name,
     image: 'ipfs://' + img_hash,
+    eventId: eventId,
   };
 
   const json_buffer = Buffer.from(JSON.stringify(send_json), 'utf-8');

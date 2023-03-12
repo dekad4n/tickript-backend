@@ -144,6 +144,24 @@ router.get('/tickets', async (req, res) => {
       },
     }
   );
-  res.json(result.data.ownedNfts);
+  const events = {};
+  await Promise.all(
+    result.data.ownedNfts.map(async (item, index) => {
+      let eventId = item.metadata.eventId;
+
+      if (!eventId) {
+        eventId = 24;
+      }
+      const event = await Event.findOne({ integerId: eventId });
+
+      if (events[eventId] !== undefined) {
+        events[eventId].items.push(item);
+      } else {
+        events[eventId] = { event: event, items: [] };
+      }
+    })
+  );
+  console.log(events);
+  res.json(events);
 });
 module.exports = router;
