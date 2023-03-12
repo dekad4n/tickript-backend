@@ -283,6 +283,7 @@ contract TicketMarket is ReentrancyGuard {
         return items;
     }
 
+    // To get ticket MarketItem details by tokenId
     function NFTItem(uint256 tokenId) public view returns (MarketItem memory) {
         uint256 item = tokenToItem[tokenId];
         return idMarketItem[item];
