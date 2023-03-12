@@ -20,6 +20,7 @@ const isHex = (num) => {
   return Boolean(num.match(/^0x[0-9a-f]+$/i));
 };
 
+// To get ticket as MarketItem by tokenId
 router.get('/market-item', async (req, res) => {
   const tokenId = req.query.tokenId;
 
@@ -30,6 +31,40 @@ router.get('/market-item', async (req, res) => {
   return;
 });
 
+// To get all MarketItems (sold & onsale) belong to a given eventId
+router.get('/market-items-all', async (req, res) => {
+  const eventId = req.query.eventId;
+
+  const marketItemsAll = await marketContract.methods
+    .ListMarketItemsAll(eventId)
+    .call();
+
+  return res.json({ marketItemsAll });
+});
+
+// To get onsale MarketItems belong to a given eventId
+router.get('market-items-onsale', async (req, res) => {
+  const eventId = req.query.eventId;
+
+  const marketItemsOnSale = await marketContract.methods
+    .ListMarketItemsOnSale(eventId)
+    .call();
+
+  return res.json({ marketItemsOnSale });
+});
+
+// To get sold MarketItems belong to a given eventId
+router.get('market-items-sold', async (req, res) => {
+  const eventId = req.query.eventId;
+
+  const marketItemsSold = await marketContract.methods
+    .ListMarketItemsSold(eventId)
+    .call();
+
+  return res.json({ marketItemsSold });
+});
+
+// To list minted NFT's on market
 router.post('/sell', auth, async (req, res) => {
   const { tokenID, price } = req.body;
   if (!tokenID || !price) {
