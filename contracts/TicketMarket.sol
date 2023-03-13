@@ -62,6 +62,12 @@ contract TicketMarket is ReentrancyGuard {
         uint256 price
     );
 
+    event StopBatchTicketSale(
+        uint256 [] tokenID,
+        address seller,
+        uint256 price
+    );
+
     function isInMarket(uint256 tokenid) public view returns(bool){
         if(tokenToItem[tokenid]>0){
             return true;
@@ -142,12 +148,34 @@ contract TicketMarket is ReentrancyGuard {
         emit MarketItemResell(tokenId, address(this), msg.sender, price);
     }
 
-    ////This function operates stopping an NFT Sale
-    function StopNFTSale( uint256 price, address NftCont, uint256 tokenId) public payable nonReentrant {
+    ////This function operates stopping a batch ticket sale
+    function StopBatchSale( uint256 price, address NftCont, uint256[] memory tokenIds, uint256 eventid) public payable nonReentrant {
+        TicketMint tokenContract = TicketMint(NftCont);
+        address addr=tokenContract.eventOwnerOfEventID(eventid);
+        require(
+            msg.sender == addr,
+            "Only event owner can perform this"
+        );
+        for(uint256 i = 0 ; i < tokenIds.length ; i++){
+            uint256 id = tokenIds[i];
+            uint256 item = tokenToItem[id];
+            idMarketItem[item].sold = true;
+            idMarketItem[item].price = price;
+            idMarketItem[item].seller = payable(address(0));
+            idMarketItem[item].ticketOwner = payable(msg.sender);
+            idMarketItem[item].soldBefore = true;
+            _itemsSold.increment();
+            IERC721(NftCont).transferFrom(address(this), msg.sender, id);
+        }
+        emit StopBatchTicketSale(tokenIds, msg.sender, price);
+    }
+
+    ////This function operates stopping single ticket sale
+    function StopTicketSale( uint256 price, address NftCont, uint256 tokenId) public payable nonReentrant {
         uint256 item = tokenToItem[tokenId];
         require(
             msg.sender == idMarketItem[item].seller ||
-                msg.sender == idMarketItem[item].eventOwner,
+            msg.sender == idMarketItem[item].eventOwner,
             "Only event owner or seller can perform this"
         );
         idMarketItem[item].sold = true;
@@ -161,7 +189,6 @@ contract TicketMarket is ReentrancyGuard {
 
         emit MarketItemStopSale(tokenId, msg.sender, price);
     }
-
     //// This function operates an NFT Sale/Transaction
     function ticketSale(address NftCont, uint256 tokenId) public payable nonReentrant{
         uint256 item = tokenToItem[tokenId];
@@ -187,7 +214,6 @@ contract TicketMarket is ReentrancyGuard {
     }
 
     //// This function operates listing NFTs on marketsale (unsold items)
-    // NO USE
     function ListItemsOnSale() public view returns (MarketItem[] memory) {
         uint256 itemCount = _itemsID.current();
         uint256 itemUnsold = _itemsID.current() - _itemsSold.current();
@@ -205,7 +231,6 @@ contract TicketMarket is ReentrancyGuard {
         return items;
     }
 
-    // Returns all marketItems created under the given eventId
     function ListEventTicketAll(uint256 eventId) public view returns (MarketItem[] memory) {
         uint256 totalItem = _itemsID.current();
         uint256 itemCount = 0;
@@ -228,7 +253,6 @@ contract TicketMarket is ReentrancyGuard {
         return items;
     }
 
-    // Returns all onSale marketItems under the given eventId
     function ListEventTicketOnSale(uint256 eventId) public view returns (MarketItem[] memory) {
         uint256 totalItem = _itemsID.current();
         uint256 itemCount = 0;
@@ -251,7 +275,6 @@ contract TicketMarket is ReentrancyGuard {
         return items;
     }
 
-    // Returns all sold marketItems under the given eventId
     function ListEventTicketSold(uint256 eventId) public view returns (MarketItem[] memory) {
         uint256 totalItem = _itemsID.current();
         uint256 itemCount = 0;
@@ -274,8 +297,7 @@ contract TicketMarket is ReentrancyGuard {
         return items;
     }
 
-    //// This function operates msg.sender's owned NFT's (purchased) 
-    //// (ticketOwner == msg.sender)
+    //// This function operates User's NFTs (purchased)
     function ListUserOwnItems() public view returns (MarketItem[] memory) {
         uint256 totalItem = _itemsID.current();
         uint256 itemCount = 0;
@@ -298,7 +320,7 @@ contract TicketMarket is ReentrancyGuard {
         return items;
     }
 
-    //// This function operates msg.sender's listed NFTs (on sale)
+    //// This function operates User's listed NFTs (on sale)
     function ListUserOnSaleItems() public view returns (MarketItem[] memory) {
         uint256 totalItem = _itemsID.current();
         uint256 itemCount = 0;
@@ -321,7 +343,7 @@ contract TicketMarket is ReentrancyGuard {
         return items;
     }
 
-    //// This function operates another user's both purchased and on sale items
+    //// This function operates USer's both purchased and on sale items
     function ListEventTicketByPublicAddress(address user) public view returns (MarketItem[] memory) {
         uint256 totalItem = _itemsID.current();
         uint256 itemCount = 0;
@@ -355,9 +377,6 @@ contract TicketMarket is ReentrancyGuard {
         return idMarketItem[item];
     }
 
-    // This function returns all market items of which the eventOwner is msg.sender
-    // (eventOwner == msg.sender)
-    // NO USE
     function ListEventOwnerItems() public view returns (MarketItem[] memory) {
         uint256 totalItem = _itemsID.current();
         uint256 itemCount = 0;
@@ -380,9 +399,6 @@ contract TicketMarket is ReentrancyGuard {
         return items;
     }
 
-
-    // This function returns list of market items on sale which are owned by msg.sender
-    // (seller == msg.sender)
     function ListEventOwnerItemsOnSale() public view returns (MarketItem[] memory){
         uint256 totalItem = _itemsID.current();
         uint256 itemCount = 0;
@@ -405,141 +421,4 @@ contract TicketMarket is ReentrancyGuard {
         return items;
     }
 
-    // function ListPartyItemsOnSale() public view returns (MarketItem[] memory) {
-    //     uint256 itemCount = _itemsID.current();
-    //     uint256 itemUnsold = _itemsID.current() - _itemsSold.current();
-    //     uint256 currentindex = 0;
-
-    //     MarketItem[] memory items = new MarketItem[](itemUnsold);
-    //     for (uint256 index = 0; index < itemCount; index++) {
-    //         if (
-    //             keccak256(
-    //                 abi.encodePacked(idMarketItem[index + 1].ticketType)
-    //             ) ==
-    //             keccak256(abi.encodePacked("PARTY")) &&
-    //             idMarketItem[index + 1].sold == false
-    //         ) {
-    //             uint256 currentItemID = index + 1;
-    //             MarketItem storage currentItem = idMarketItem[currentItemID];
-    //             items[currentindex] = currentItem;
-    //             currentindex += 1;
-    //         }
-    //     }
-    //     return items;
-    // }
-
-    // function ListOrganizationItemsOnSale() public view returns (MarketItem[] memory){
-    //     uint256 itemCount = _itemsID.current();
-    //     uint256 itemUnsold = _itemsID.current() - _itemsSold.current();
-    //     uint256 currentindex = 0;
-
-    //     MarketItem[] memory items = new MarketItem[](itemUnsold);
-    //     for (uint256 index = 0; index < itemCount; index++) {
-    //         if (
-    //             keccak256(
-    //                 abi.encodePacked(idMarketItem[index + 1].ticketType)
-    //             ) ==
-    //             keccak256(abi.encodePacked("ORGANIZATION")) &&
-    //             idMarketItem[index + 1].sold == false
-    //         ) {
-    //             uint256 currentItemID = index + 1;
-    //             MarketItem storage currentItem = idMarketItem[currentItemID];
-    //             items[currentindex] = currentItem;
-    //             currentindex += 1;
-    //         }
-    //     }
-    //     return items;
-    // }
-
-    // function ListMusicItemsOnSale() public view returns (MarketItem[] memory) {
-    //     uint256 itemCount = _itemsID.current();
-    //     uint256 itemUnsold = _itemsID.current() - _itemsSold.current();
-    //     uint256 currentindex = 0;
-
-    //     MarketItem[] memory items = new MarketItem[](itemUnsold);
-    //     for (uint256 index = 0; index < itemCount; index++) {
-    //         if (
-    //             keccak256(
-    //                 abi.encodePacked(idMarketItem[index + 1].ticketType)
-    //             ) ==
-    //             keccak256(abi.encodePacked("MUSIC")) &&
-    //             idMarketItem[index + 1].sold == false
-    //         ) {
-    //             uint256 currentItemID = index + 1;
-    //             MarketItem storage currentItem = idMarketItem[currentItemID];
-    //             items[currentindex] = currentItem;
-    //             currentindex += 1;
-    //         }
-    //     }
-    //     return items;
-    // }
-
-    // function ListStageItemsOnSale() public view returns (MarketItem[] memory) {
-    //     uint256 itemCount = _itemsID.current();
-    //     uint256 itemUnsold = _itemsID.current() - _itemsSold.current();
-    //     uint256 currentindex = 0;
-
-    //     MarketItem[] memory items = new MarketItem[](itemUnsold);
-    //     for (uint256 index = 0; index < itemCount; index++) {
-    //         if (
-    //             keccak256(
-    //                 abi.encodePacked(idMarketItem[index + 1].ticketType)
-    //             ) ==
-    //             keccak256(abi.encodePacked("STAGE")) &&
-    //             idMarketItem[index + 1].sold == false
-    //         ) {
-    //             uint256 currentItemID = index + 1;
-    //             MarketItem storage currentItem = idMarketItem[currentItemID];
-    //             items[currentindex] = currentItem;
-    //             currentindex += 1;
-    //         }
-    //     }
-    //     return items;
-    // }
-
-    // function ListSportItemsOnSale() public view returns (MarketItem[] memory) {
-    //     uint256 itemCount = _itemsID.current();
-    //     uint256 itemUnsold = _itemsID.current() - _itemsSold.current();
-    //     uint256 currentindex = 0;
-
-    //     MarketItem[] memory items = new MarketItem[](itemUnsold);
-    //     for (uint256 index = 0; index < itemCount; index++) {
-    //         if (
-    //             keccak256(
-    //                 abi.encodePacked(idMarketItem[index + 1].ticketType)
-    //             ) ==
-    //             keccak256(abi.encodePacked("SPORT")) &&
-    //             idMarketItem[index + 1].sold == false
-    //         ) {
-    //             uint256 currentItemID = index + 1;
-    //             MarketItem storage currentItem = idMarketItem[currentItemID];
-    //             items[currentindex] = currentItem;
-    //             currentindex += 1;
-    //         }
-    //     }
-    //     return items;
-    // }
-
-    // function ListOtherItemsOnSale() public view returns (MarketItem[] memory) {
-    //     uint256 itemCount = _itemsID.current();
-    //     uint256 itemUnsold = _itemsID.current() - _itemsSold.current();
-    //     uint256 currentindex = 0;
-
-    //     MarketItem[] memory items = new MarketItem[](itemUnsold);
-    //     for (uint256 index = 0; index < itemCount; index++) {
-    //         if (
-    //             keccak256(
-    //                 abi.encodePacked(idMarketItem[index + 1].ticketType)
-    //             ) ==
-    //             keccak256(abi.encodePacked("OTHER")) &&
-    //             idMarketItem[index + 1].sold == false
-    //         ) {
-    //             uint256 currentItemID = index + 1;
-    //             MarketItem storage currentItem = idMarketItem[currentItemID];
-    //             items[currentindex] = currentItem;
-    //             currentindex += 1;
-    //         }
-    //     }
-    //     return items;
-    // }
 }

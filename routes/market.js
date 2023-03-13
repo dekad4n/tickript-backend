@@ -146,7 +146,7 @@ router.post('/sell', auth, async (req, res) => {
 });
 
 router.post('/stop-sale', auth, async (req, res) => {
-  let { price, tokenIds } = req.body;
+  let { price, tokenIds, eventId } = req.body;
 
   let transactionParameters = {
     to: ContractDetails.MarketContractAddress, // Required except during contract publications.
@@ -155,16 +155,15 @@ router.post('/stop-sale', auth, async (req, res) => {
     data: [],
   };
   try {
-    for (const tokenId of tokenIds) {
-      transaction = await marketContract.methods
-        .StopNFTSale(
-          web3.utils.toWei(price, 'ether'),
-          ContractDetails.ContractAddress,
-          tokenId
-        )
-        .encodeABI();
-      transactionParameters['data'].push(transaction);
-    }
+    const transaction = await marketContract.methods
+      .StopBatchSale(
+        web3.utils.toWei(price, 'ether'),
+        ContractDetails.ContractAddress,
+        tokenIds,
+        eventId
+      )
+      .encodeABI();
+    transactionParameters['data'] = transaction;
   } catch (e) {
     console.error('ERROR:', e);
   }

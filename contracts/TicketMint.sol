@@ -15,6 +15,7 @@ contract TicketMint is ERC721URIStorage, ERC721Burnable {
     mapping(address => bool) EventOwnerAddresses;
     mapping(uint256 => uint256[]) EventIDtotokenID;
     mapping(uint256 => uint256) tokenIDtoeventID;
+    mapping(uint256 => address) eventIDtoeventOwner;
 
     constructor(address marketAddress) ERC721("Tickript", "Tic") {
         contractAddress = marketAddress;
@@ -45,6 +46,7 @@ contract TicketMint is ERC721URIStorage, ERC721Burnable {
             EventIDtotokenID[eventId].push(newItemId);
             tokenIDtoeventID[newItemId]=eventId;
         }
+        eventIDtoeventOwner[eventId]=msg.sender;
         emit Mint(eventId,supply,msg.sender);
     }
 
@@ -104,6 +106,10 @@ contract TicketMint is ERC721URIStorage, ERC721Burnable {
 
     function getEventID(uint tokenid) public view returns( uint256){
         return tokenIDtoeventID[tokenid];
+    }
+
+    function eventOwnerOfEventID(uint eventid) public view returns (address){
+        return eventIDtoeventOwner[eventid];
     }
 
     modifier isEventOwner(address _address) {
