@@ -35,9 +35,26 @@ router.get('/market-item', async (req, res) => {
 router.get('/market-items-all', async (req, res) => {
   const eventId = req.query.eventId;
 
-  const marketItemsAll = await marketContract.methods
+  const marketItemsAllRaw = await marketContract.methods
     .ListEventTicketAll(eventId)
     .call();
+
+  const marketItemsAll = [];
+
+  marketItemsAllRaw.forEach((marketItem) => {
+    marketItemsAll.push({
+      nftContract: marketItem[0],
+      tokenID: parseInt(marketItem[1]),
+      eventID: parseInt(marketItem[2]),
+      ticketOwner: marketItem[3],
+      eventOwner: marketItem[4],
+      seller: marketItem[5],
+      price: parseFloat(web3.utils.fromWei(marketItem[6], 'ether')),
+      ticketType: marketItem[7],
+      sold: marketItem[8],
+      soldBefore: marketItem[9],
+    });
+  });
 
   return res.json({ marketItemsAll });
 });

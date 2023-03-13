@@ -161,7 +161,6 @@ router.get('/tickets', async (req, res) => {
       }
     })
   );
-  console.log(events);
   res.json(events);
 });
 module.exports = router;

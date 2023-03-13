@@ -24,6 +24,12 @@ const utilsRoute = require('./routes/utils');
 const marketRoute = require('./routes/market');
 var session = require('express-session');
 // app.use(cors)
+
+app.use(function (req, res, next) {
+  console.log('Request:', req.method, req.originalUrl);
+  next();
+});
+
 app.use(
   session({
     secret: process.env.SESSION_KEY,
