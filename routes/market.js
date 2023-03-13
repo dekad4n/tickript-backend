@@ -145,4 +145,32 @@ router.post('/sell', auth, async (req, res) => {
   return;
 });
 
+router.post('/stop-sale', auth, async (req, res) => {
+  let { price, tokenIds } = req.body;
+
+  let transactionParameters = {
+    to: ContractDetails.MarketContractAddress, // Required except during contract publications.
+    from: req.user.publicAddress, // must match user's active address.
+    value: web3.utils.toWei(price.toString(), 'ether'),
+    data: [],
+  };
+  try {
+    for (const tokenId of tokenIds) {
+      transaction = await marketContract.methods
+        .StopNFTSale(
+          web3.utils.toWei(price, 'ether'),
+          ContractDetails.ContractAddress,
+          tokenId
+        )
+        .encodeABI();
+      transactionParameters['data'].push(transaction);
+    }
+  } catch (e) {
+    console.error('ERROR:', e);
+  }
+
+  console.log(transactionParameters);
+  res.json(transactionParameters);
+});
+
 module.exports = router;
