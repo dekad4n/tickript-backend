@@ -36,7 +36,7 @@ router.get('/market-items-all', async (req, res) => {
   const eventId = req.query.eventId;
 
   const marketItemsAll = await marketContract.methods
-    .ListMarketItemsAll(eventId)
+    .ListEventTicketAll(eventId)
     .call();
 
   return res.json({ marketItemsAll });
@@ -49,7 +49,7 @@ router.get('market-items-onsale', async (req, res) => {
 
   if (eventId) {
     const marketItemsOnSale = await marketContract.methods
-      .ListMarketItemsOnSale(eventId)
+      .ListEventTicketOnSale(eventId)
       .call();
 
     return res.json({ marketItemsOnSale });
@@ -57,9 +57,20 @@ router.get('market-items-onsale', async (req, res) => {
 
   if (publicAddress) {
     //TODO
-    const marketItemsOnSale = await marketContract.methods
-      .ListMarketItems(publicAddress)
+    const marketItemsOwned = await marketContract.methods
+      .ListEventTicketByPublicAddress(publicAddress)
       .call();
+
+    //Filter market items owned by given publicAddress as they are on sale or not
+
+    console.log(marketItemsOwned);
+
+    const marketItemsOnSale = [];
+
+    for (const marketItem of marketItemsOwned) {
+      if (marketItem.seller == publicAddress)
+        marketItemsOnSale.push(marketItem);
+    }
 
     return res.json({ marketItemsOnSale });
   }
@@ -70,21 +81,21 @@ router.get('market-items-sold', async (req, res) => {
   const eventId = req.query.eventId;
 
   const marketItemsSold = await marketContract.methods
-    .ListMarketItemsSold(eventId)
+    .ListEventTicketSold(eventId)
     .call();
 
   return res.json({ marketItemsSold });
 });
 
+// To get someone's owned tickets (Which events they attend, which events they organize, etc.)
 router.get('market-items-owned', async (req, res) => {
   const publicAddress = req.query.publicAddress;
 
-  //TODO
-  // const marketItemsOnSale = await marketContract.methods
-  //   .ListMarketItems(publicAddress)
-  //   .call();
+  const marketItemsOwned = await marketContract.methods
+    .ListEventTicketByPublicAddress(publicAddress)
+    .call();
 
-  // return res.json({ marketItemsOnSale });
+  return res.json({ marketItemsOwned });
 });
 
 // To list minted NFT's on market

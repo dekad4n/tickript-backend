@@ -187,6 +187,7 @@ contract TicketMarket is ReentrancyGuard {
     }
 
     //// This function operates listing NFTs on marketsale (unsold items)
+    // NO USE
     function ListItemsOnSale() public view returns (MarketItem[] memory) {
         uint256 itemCount = _itemsID.current();
         uint256 itemUnsold = _itemsID.current() - _itemsSold.current();
@@ -204,6 +205,7 @@ contract TicketMarket is ReentrancyGuard {
         return items;
     }
 
+    // Returns all marketItems created under the given eventId
     function ListEventTicketAll(uint256 eventId) public view returns (MarketItem[] memory) {
         uint256 totalItem = _itemsID.current();
         uint256 itemCount = 0;
@@ -226,6 +228,7 @@ contract TicketMarket is ReentrancyGuard {
         return items;
     }
 
+    // Returns all onSale marketItems under the given eventId
     function ListEventTicketOnSale(uint256 eventId) public view returns (MarketItem[] memory) {
         uint256 totalItem = _itemsID.current();
         uint256 itemCount = 0;
@@ -248,6 +251,7 @@ contract TicketMarket is ReentrancyGuard {
         return items;
     }
 
+    // Returns all sold marketItems under the given eventId
     function ListEventTicketSold(uint256 eventId) public view returns (MarketItem[] memory) {
         uint256 totalItem = _itemsID.current();
         uint256 itemCount = 0;
@@ -270,7 +274,8 @@ contract TicketMarket is ReentrancyGuard {
         return items;
     }
 
-    //// This function operates User's NFTs (purchased)
+    //// This function operates msg.sender's owned NFT's (purchased) 
+    //// (ticketOwner == msg.sender)
     function ListUserOwnItems() public view returns (MarketItem[] memory) {
         uint256 totalItem = _itemsID.current();
         uint256 itemCount = 0;
@@ -293,7 +298,7 @@ contract TicketMarket is ReentrancyGuard {
         return items;
     }
 
-    //// This function operates User's listed NFTs (on sale)
+    //// This function operates msg.sender's listed NFTs (on sale)
     function ListUserOnSaleItems() public view returns (MarketItem[] memory) {
         uint256 totalItem = _itemsID.current();
         uint256 itemCount = 0;
@@ -316,7 +321,7 @@ contract TicketMarket is ReentrancyGuard {
         return items;
     }
 
-    //// This function operates USer's both purchased and on sale items
+    //// This function operates another user's both purchased and on sale items
     function ListEventTicketByPublicAddress(address user) public view returns (MarketItem[] memory) {
         uint256 totalItem = _itemsID.current();
         uint256 itemCount = 0;
@@ -350,6 +355,9 @@ contract TicketMarket is ReentrancyGuard {
         return idMarketItem[item];
     }
 
+    // This function returns all market items of which the eventOwner is msg.sender
+    // (eventOwner == msg.sender)
+    // NO USE
     function ListEventOwnerItems() public view returns (MarketItem[] memory) {
         uint256 totalItem = _itemsID.current();
         uint256 itemCount = 0;
@@ -372,6 +380,9 @@ contract TicketMarket is ReentrancyGuard {
         return items;
     }
 
+
+    // This function returns list of market items on sale which are owned by msg.sender
+    // (seller == msg.sender)
     function ListEventOwnerItemsOnSale() public view returns (MarketItem[] memory){
         uint256 totalItem = _itemsID.current();
         uint256 itemCount = 0;
