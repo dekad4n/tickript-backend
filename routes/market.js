@@ -42,15 +42,27 @@ router.get('/market-items-all', async (req, res) => {
   return res.json({ marketItemsAll });
 });
 
-// To get onsale MarketItems belong to a given eventId
+// To get onsale MarketItems belong to a given eventId || publicAddress
 router.get('market-items-onsale', async (req, res) => {
   const eventId = req.query.eventId;
+  const publicAddress = req.query.publicAddress;
 
-  const marketItemsOnSale = await marketContract.methods
-    .ListMarketItemsOnSale(eventId)
-    .call();
+  if (eventId) {
+    const marketItemsOnSale = await marketContract.methods
+      .ListMarketItemsOnSale(eventId)
+      .call();
 
-  return res.json({ marketItemsOnSale });
+    return res.json({ marketItemsOnSale });
+  }
+
+  if (publicAddress) {
+    //TODO
+    const marketItemsOnSale = await marketContract.methods
+      .ListMarketItems(publicAddress)
+      .call();
+
+    return res.json({ marketItemsOnSale });
+  }
 });
 
 // To get sold MarketItems belong to a given eventId
@@ -62,6 +74,17 @@ router.get('market-items-sold', async (req, res) => {
     .call();
 
   return res.json({ marketItemsSold });
+});
+
+router.get('market-items-owned', async (req, res) => {
+  const publicAddress = req.query.publicAddress;
+
+  //TODO
+  // const marketItemsOnSale = await marketContract.methods
+  //   .ListMarketItems(publicAddress)
+  //   .call();
+
+  // return res.json({ marketItemsOnSale });
 });
 
 // To list minted NFT's on market
