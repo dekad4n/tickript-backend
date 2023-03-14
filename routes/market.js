@@ -7,6 +7,7 @@ const ContractDetails = require('../contracts/ContractDetails');
 
 const alchemyAPIKey = process.env['ALCHEMY_API_KEY'];
 const { createAlchemyWeb3 } = require('@alch/alchemy-web3');
+const axios = require('axios');
 
 const web3 = createAlchemyWeb3(
   'https://polygon-mumbai.g.alchemy.com/v2/' + alchemyAPIKey
@@ -196,8 +197,28 @@ router.post('/stop-batch-sale', auth, async (req, res) => {
     console.error('ERROR AT STOP-BATCH-SALE:', e);
   }
 
-  console.log(transactionParameters);
   res.json(transactionParameters);
 });
 
+router.post('/buy', auth, async (req, res) => {
+  let { tokenIds, price } = req.body;
+
+  let transactionParameters = {
+    to: ContractDetails.MarketContractAddress, // Required except during contract publications.
+    from: req.user.publicAddress, // must match user's active address.
+    value: parseInt(web3.utils.toWei(price.toString(), 'ether')).toString(16),
+  };
+
+  try {
+    const transaction = await marketContract.methods
+      .ticketSale(ContractDetails.ContractAddress, tokenIds)
+      .encodeABI();
+
+    transactionParameters['data'] = transaction;
+  } catch (e) {
+    console.error('ERROR AT BUY:', e);
+  }
+
+  res.json(transactionParameters);
+});
 module.exports = router;

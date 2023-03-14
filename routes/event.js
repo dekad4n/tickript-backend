@@ -48,6 +48,10 @@ router.get('/', async (req, res) => {
   res.json({ event });
 });
 
+router.get('/get-random-event', async (req, res) => {
+  const result = await Event.aggregate([{ $sample: { size: 1 } }]);
+  res.json(result[0]);
+});
 router.get('/minted-event-ticket-tokens', async (req, res) => {
   const integerId = req.query['integerId'];
 
