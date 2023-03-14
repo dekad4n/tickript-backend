@@ -146,14 +146,41 @@ router.post('/sell', auth, async (req, res) => {
 });
 
 router.post('/stop-sale', auth, async (req, res) => {
+  let { price, tokenId } = req.body;
+
+  let transactionParameters = {
+    to: ContractDetails.MarketContractAddress, // Required except during contract publications.
+    from: req.user.publicAddress, // must match user's active address.
+    value: web3.utils.toWei(price.toString(), 'ether'),
+  };
+
+  try {
+    const transaction = await marketContract.methods
+      .StopTicketSale(
+        web3.utils.toWei(price, 'ether'),
+        ContractDetails.ContractAddress,
+        tokenId
+      )
+      .encodeABI();
+
+    transactionParameters['data'] = transaction;
+  } catch (e) {
+    console.error('ERROR AT STOP-SALE:', e);
+  }
+
+  console.log(transactionParameters);
+  res.json(transactionParameters);
+});
+
+router.post('/stop-batch-sale', auth, async (req, res) => {
   let { price, tokenIds, eventId } = req.body;
 
   let transactionParameters = {
     to: ContractDetails.MarketContractAddress, // Required except during contract publications.
     from: req.user.publicAddress, // must match user's active address.
     value: web3.utils.toWei(price.toString(), 'ether'),
-    data: [],
   };
+
   try {
     const transaction = await marketContract.methods
       .StopBatchSale(
@@ -163,9 +190,10 @@ router.post('/stop-sale', auth, async (req, res) => {
         eventId
       )
       .encodeABI();
+
     transactionParameters['data'] = transaction;
   } catch (e) {
-    console.error('ERROR:', e);
+    console.error('ERROR AT STOP-BATCH-SALE:', e);
   }
 
   console.log(transactionParameters);

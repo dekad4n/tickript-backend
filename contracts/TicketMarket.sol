@@ -148,7 +148,8 @@ contract TicketMarket is ReentrancyGuard {
         emit MarketItemResell(tokenId, address(this), msg.sender, price);
     }
 
-    ////This function operates stopping a batch ticket sale
+    //// This function operates stopping a batch ticket sale
+    //// Only event owners can do this
     function StopBatchSale( uint256 price, address NftCont, uint256[] memory tokenIds, uint256 eventid) public payable nonReentrant {
         TicketMint tokenContract = TicketMint(NftCont);
         address addr=tokenContract.eventOwnerOfEventID(eventid);
