@@ -61,7 +61,7 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/mint', auth, uploadmw.any(), async (req, res) => {
-  const { name, image, eventId } = req.body;
+  const { name, image, eventId, startDateTime, endDateTime } = req.body;
   let { amount } = req.body;
   if (!amount) amount = 1;
 
@@ -83,7 +83,10 @@ router.post('/mint', auth, uploadmw.any(), async (req, res) => {
   let send_json = {
     name: name,
     image: 'ipfs://' + img_hash,
+    amount: amount,
     eventId: eventId,
+    startDateTime: startDateTime,
+    endDateTime: endDateTime,
   };
 
   const json_buffer = Buffer.from(JSON.stringify(send_json), 'utf-8');
