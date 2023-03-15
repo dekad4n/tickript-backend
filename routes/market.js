@@ -116,6 +116,30 @@ router.get('market-items-owned', async (req, res) => {
   return res.json({ marketItemsOwned });
 });
 
+router.post('/resell', auth, async (req, res) => {
+  let { price, tokenId } = req.body;
+
+  let transactionParameters = {
+    to: ContractDetails.MarketContractAddress, // Required except during contract publications.
+    from: req.user.publicAddress, // must match user's active address.
+    value: web3.utils.toWei(price, 'ether'),
+  };
+
+  transaction = await marketContract.methods
+    .ResellTicket(
+      web3.utils.toWei(price, 'ether'),
+      ContractDetails.ContractAddress,
+      tokenId
+    )
+    .encodeABI();
+
+  transactionParameters['data'] = transaction;
+
+  console.log(transactionParameters);
+  res.json(transactionParameters);
+  return;
+});
+
 // To list minted NFT's on market
 router.post('/sell', auth, async (req, res) => {
   let { eventId, price, amount } = req.body;
