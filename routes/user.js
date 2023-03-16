@@ -13,6 +13,7 @@ const Event = require('../models/event');
 
 const axios = require('axios');
 const ContractDetails = require('../contracts/ContractDetails');
+const marketABI = require('../contracts/TicketMarket.json');
 const alchemyAPIKey = process.env['ALCHEMY_API_KEY'];
 
 const cloudinary = require('cloudinary').v2;
@@ -25,7 +26,16 @@ cloudinary.config({
   api_secret: process.env['CLOUDINARY_SECRET'],
   secure: true,
 });
+const { createAlchemyWeb3 } = require('@alch/alchemy-web3');
 
+const web3 = createAlchemyWeb3(
+  'https://polygon-mumbai.g.alchemy.com/v2/' + alchemyAPIKey
+);
+
+marketContract = new web3.eth.Contract(
+  marketABI.abi,
+  ContractDetails.MarketContractAddress
+);
 router.get('/', async (req, res) => {
   if (Object.keys(req.query).length == 0) {
     res.json({ resp: 'user endpoint' });
@@ -134,21 +144,27 @@ router.get('/events', async (req, res) => {
 
 router.get('/tickets', async (req, res) => {
   const publicAddress = req.query.publicAddress;
-  const result = await axios.get(
-    'https://polygon-mumbai.g.alchemy.com/nft/v2/' + alchemyAPIKey + '/getNFTs',
-    {
-      params: {
-        owner: publicAddress,
-        withMetadata: true,
-        contractAddresses: [ContractDetails.ContractAddress],
-      },
-    }
-  );
+
+  // Get ticket details from Mint Contract
+  const eventsByPublicAddress = await marketContract.methods
+    .ListEventTicketByPublicAddress(publicAddress)
+    .call();
+  // const result = await axios.get(
+  //   'https://polygon-mumbai.g.alchemy.com/nft/v2/' + alchemyAPIKey + '/getNFTs',
+  //   {
+  //     params: {
+  //       owner: publicAddress,
+  //       withMetadata: true,
+  //       contractAddresses: [ContractDetails.ContractAddress],
+  //     },
+  //   }
+  // );
+  // console.log(result.data.ownedNfts);
+
   const events = {};
   await Promise.all(
-    result.data.ownedNfts.map(async (item, index) => {
-      let eventId = item.metadata.eventId;
-
+    eventsByPublicAddress.map(async (item, index) => {
+      let eventId = item.eventID;
       if (!eventId) {
         eventId = 24;
       }
