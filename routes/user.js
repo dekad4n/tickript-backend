@@ -164,16 +164,26 @@ router.get('/tickets', async (req, res) => {
   const events = {};
   await Promise.all(
     eventsByPublicAddress.map(async (item, index) => {
-      let eventId = item.eventID;
-      if (!eventId) {
-        eventId = 24;
-      }
-      const event = await Event.findOne({ integerId: eventId });
+      const seller = item.seller.toLocaleLowerCase();
+      const eventOwner = item.eventOwner.toLocaleLowerCase();
+      const ticketOwner = item.ticketOwner.toLocaleLowerCase();
 
-      if (events[eventId] !== undefined) {
-        events[eventId].items.push(item);
-      } else {
-        events[eventId] = { event: event, items: [] };
+      if (
+        seller != publicAddress &&
+        eventOwner != publicAddress &&
+        ticketOwner == publicAddress
+      ) {
+        let eventId = item.eventID;
+        if (!eventId) {
+          eventId = 24;
+        }
+        const event = await Event.findOne({ integerId: eventId });
+
+        if (events[eventId] !== undefined) {
+          events[eventId].items.push(item);
+        } else {
+          events[eventId] = { event: event, items: [] };
+        }
       }
     })
   );
