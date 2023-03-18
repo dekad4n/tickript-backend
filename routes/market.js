@@ -61,60 +61,6 @@ router.get('/market-items-all', async (req, res) => {
 });
 
 // To get onsale MarketItems belong to a given eventId || publicAddress
-router.get('market-items-onsale', async (req, res) => {
-  const eventId = req.query.eventId;
-  const publicAddress = req.query.publicAddress;
-
-  if (eventId) {
-    const marketItemsOnSale = await marketContract.methods
-      .ListEventTicketOnSale(eventId)
-      .call();
-
-    return res.json({ marketItemsOnSale });
-  }
-
-  if (publicAddress) {
-    //TODO
-    const marketItemsOwned = await marketContract.methods
-      .ListEventTicketByPublicAddress(publicAddress)
-      .call();
-
-    //Filter market items owned by given publicAddress as they are on sale or not
-
-    console.log(marketItemsOwned);
-
-    const marketItemsOnSale = [];
-
-    for (const marketItem of marketItemsOwned) {
-      if (marketItem.seller == publicAddress)
-        marketItemsOnSale.push(marketItem);
-    }
-
-    return res.json({ marketItemsOnSale });
-  }
-});
-
-// To get sold MarketItems belong to a given eventId
-router.get('market-items-sold', async (req, res) => {
-  const eventId = req.query.eventId;
-
-  const marketItemsSold = await marketContract.methods
-    .ListEventTicketSold(eventId)
-    .call();
-
-  return res.json({ marketItemsSold });
-});
-
-// To get someone's owned tickets (Which events they attend, which events they organize, etc.)
-router.get('market-items-owned', async (req, res) => {
-  const publicAddress = req.query.publicAddress;
-
-  const marketItemsOwned = await marketContract.methods
-    .ListEventTicketByPublicAddress(publicAddress)
-    .call();
-
-  return res.json({ marketItemsOwned });
-});
 
 router.post('/resell', auth, async (req, res) => {
   let { price, tokenId } = req.body;
