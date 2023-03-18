@@ -54,6 +54,8 @@ router.get('/market-items-all', async (req, res) => {
       ticketType: marketItem[7],
       sold: marketItem[8],
       soldBefore: marketItem[9],
+      seat: marketItem[10],
+      transferRight: parseInt(marketItem[11]),
     });
   });
 
@@ -88,7 +90,7 @@ router.post('/resell', auth, async (req, res) => {
 
 // To list minted NFT's on market
 router.post('/sell', auth, async (req, res) => {
-  let { eventId, price, amount } = req.body;
+  let { eventId, price, amount, transferRight } = req.body;
 
   eventId = parseInt(eventId);
   amount = parseInt(amount);
@@ -105,7 +107,8 @@ router.post('/sell', auth, async (req, res) => {
       ContractDetails.ContractAddress,
       'normal',
       eventId,
-      amount
+      amount,
+      transferRight
     )
     .encodeABI();
 
