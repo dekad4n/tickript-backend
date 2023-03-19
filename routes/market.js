@@ -73,7 +73,7 @@ router.get('/transferable-ids', auth, async (req, res) => {
 });
 
 router.post('/resell', auth, async (req, res) => {
-  let { price, tokenId } = req.body;
+  let { price, tokenIds } = req.body;
 
   let transactionParameters = {
     to: ContractDetails.MarketContractAddress, // Required except during contract publications.
@@ -85,7 +85,7 @@ router.post('/resell', auth, async (req, res) => {
     .ResellTicket(
       web3.utils.toWei(price, 'ether'),
       ContractDetails.ContractAddress,
-      tokenId
+      tokenIds
     )
     .encodeABI();
 
