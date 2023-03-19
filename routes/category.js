@@ -16,7 +16,6 @@ router.post('/add', async (req, res) => {
   let result = await Category.create({
     image: req.body.image,
     name: req.body.name,
-    parentName: req.body.parentName,
   });
   res.json(result);
 });

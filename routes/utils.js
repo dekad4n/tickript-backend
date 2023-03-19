@@ -42,4 +42,10 @@ router.get('/search', async (req, res) => {
   }
 });
 
+router.get('/get-events-by-category', async (req, res) => {
+  const category = req.query['category'];
+  const result = await Event.find({ category: category });
+  console.log(result);
+  res.json(result);
+});
 module.exports = router;
