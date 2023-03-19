@@ -62,7 +62,15 @@ router.get('/market-items-all', async (req, res) => {
   return res.json({ marketItemsAll });
 });
 
-// To get onsale MarketItems belong to a given eventId || publicAddress
+router.get('/transferable-ids', auth, async (req, res) => {
+  const { eventId, publicAddress } = req.query;
+
+  const transferableIds = await marketContract.methods
+    .TransferableIds(eventId, publicAddress)
+    .call();
+
+  return res.json({ transferableIds });
+});
 
 router.post('/resell', auth, async (req, res) => {
   let { price, tokenId } = req.body;
