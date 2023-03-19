@@ -72,6 +72,27 @@ router.get('/transferable-ids', auth, async (req, res) => {
   return res.json({ transferableIds });
 });
 
+router.post('/transfer', auth, async (req, res) => {
+  let { tokenId, toAddr } = req.body;
+
+  toAddr = toAddr.toLocaleLowerCase();
+
+  let transactionParameters = {
+    to: ContractDetails.MarketContractAddress, // Required except during contract publications.
+    from: req.user.publicAddress, // must match user's active address.
+    value: web3.utils.toWei('0.01', 'ether'),
+  };
+
+  const transaction = await marketContract.methods
+    .TransferTicket(ContractDetails.ContractAddress, tokenId, toAddr)
+    .encodeABI();
+
+  transactionParameters['data'] = transaction;
+
+  res.json(transactionParameters);
+  return;
+});
+
 router.post('/resell', auth, async (req, res) => {
   let { price, tokenIds } = req.body;
 
