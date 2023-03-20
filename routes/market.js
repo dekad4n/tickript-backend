@@ -223,4 +223,24 @@ router.post('/buy', auth, async (req, res) => {
 
   res.json(transactionParameters);
 });
+
+router.post('/use-tickets', auth, async (req, res) => {
+  const { tokenIds } = req.body;
+
+  let transactionParameters = {
+    to: ContractDetails.MarketContractAddress, // Required except during contract publications.
+    from: req.user.publicAddress, // must match user's active address.
+    // value: web3.utils.toWei('0.01', 'ether'),
+  };
+
+  ///TODO
+  const transaction = await marketContract.methods
+    .UseTickets(ContractDetails.ContractAddress, tokenIds)
+    .encodeABI();
+
+  transactionParameters['data'] = transaction;
+
+  res.json(transactionParameters);
+  return;
+});
 module.exports = router;
