@@ -53,11 +53,7 @@ router.get('/get-random-event', async (req, res) => {
   res.json(result[0]);
 });
 
-router.get('/get-events-by-category', async (req, res) => {
-  const category = req.query['category'];
-  const result = await Event.find({ category: category });
-  res.json(result);
-});
+
 
 router.get('/minted-event-ticket-tokens', async (req, res) => {
   const integerId = req.query['integerId'];

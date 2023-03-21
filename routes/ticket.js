@@ -12,9 +12,13 @@ require('dotenv').config();
 
 const ContractDetails = require('../contracts/ContractDetails');
 const contractABI = require('../contracts/TicketMint.json');
+const marketABI = require('../contracts/TicketMarket.json');
 const alchemyAPIKey = process.env['ALCHEMY_API_KEY'];
 const { createAlchemyWeb3 } = require('@alch/alchemy-web3');
 
+const recoverPersonalSignature = require('eth-sig-util');
+
+const Ticket = require('../models/ticket');
 // Using HTTPS
 const web3 = createAlchemyWeb3(
   'https://polygon-mumbai.g.alchemy.com/v2/' + alchemyAPIKey
@@ -23,7 +27,10 @@ let MintContract = new web3.eth.Contract(
   contractABI.abi,
   ContractDetails.ContractAddress
 );
-
+let MarketContract = new web3.eth.Contract(
+  marketABI.abi,
+  ContractDetails.MarketContractAddress
+);
 const router = express.Router();
 
 const getNFTMetadata = async (contract, token) => {
@@ -127,6 +134,59 @@ router.post('/mint', auth, uploadmw.any(), async (req, res) => {
   }
 });
 
+router.post('/is-ticket-checked', auth, async (req, res) => {
+  const { tokenId, nonce, signature } = req.body;
+  let ticket = await MarketContract.methods.NFTItem(tokenId).call();
+  const ticketOwner = ticket[3];
+  const eventOwner = ticket[4];
+  const checkerPublicAddress = req.user.publicAddress;
+  console.log(eventOwner);
+  console.log(checkerPublicAddress);
+  if (
+    eventOwner.toLocaleLowerCase() !== checkerPublicAddress.toLocaleLowerCase()
+  ) {
+    res.status(401);
+    res.json({ value: true, message: 'You are not the event owner!' });
+    return;
+  }
+  const address = recoverPersonalSignature.recoverPersonalSignature({
+    data: nonce,
+    sig: signature,
+  });
+
+  // Is QR code creator Owner
+  if (ticketOwner.toLocaleLowerCase() !== address.toLocaleLowerCase()) {
+    // I
+    res.status(401);
+    res.json({
+      value: true,
+      message: 'The QR code creator is not the ticket owner',
+    });
+    return;
+  }
+  const foundTicketInDB = await Ticket.findOne({ tokenId: tokenId });
+  // Did we check before
+  if (!foundTicketInDB) {
+    // we did not check before
+    await Ticket.create({
+      tokenId: tokenId,
+      checked: true,
+      controllerAddress: checkerPublicAddress.toLocaleLowerCase(),
+    });
+    // You
+    res.json({ value: false });
+    return;
+  }
+  res.json({ value: true });
+});
+
+router.post('/change-ticket-used-state', auth, async (req, res) => {
+  const { tokenList } = req.body;
+  // marketItem.use(tokenList);
+  Ticket.deleteMany({
+    controllerAddress: req.user.publicAddress.toLocaleLowerCase(),
+  });
+});
 const uploadFromBuffer = async (buffer) => {
   try {
     const stream = Readable.from(buffer);
