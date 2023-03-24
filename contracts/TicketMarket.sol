@@ -30,6 +30,7 @@ contract TicketMarket is ReentrancyGuard {
         string ticketType;
         bool sold;
         bool soldBefore;
+        bool used;
         uint128 seat;
         uint128 transferRight;
     }
@@ -112,6 +113,7 @@ contract TicketMarket is ReentrancyGuard {
                     payable(msg.sender),
                     price,
                     ticketType,
+                    false,
                     false,
                     false,
                     i,
@@ -306,28 +308,6 @@ contract TicketMarket is ReentrancyGuard {
         return items;
     }
 
-    function ListEventTicketSold(uint256 eventId) public view returns (MarketItem[] memory) {
-        uint256 totalItem = _itemsID.current();
-        uint256 itemCount = 0;
-        uint256 currentindex = 0;
-
-        for (uint256 index = 0; index < totalItem; index++) {
-            if (idMarketItem[index + 1].eventID == eventId && idMarketItem[index + 1].sold == true) {
-                itemCount += 1;
-            }
-        }
-        MarketItem[] memory items = new MarketItem[](itemCount);
-        for (uint256 index = 0; index < totalItem; index++) {
-            if (idMarketItem[index + 1].eventID == eventId  && idMarketItem[index + 1].sold == true) {
-                uint256 currentItemID = index + 1;
-                MarketItem storage currentItem = idMarketItem[currentItemID];
-                items[currentindex] = currentItem;
-                currentindex += 1;
-            }
-        }
-        return items;
-    }
-
     //// This function operates User's NFTs (purchased)
     function ListUserOwnItems() public view returns (MarketItem[] memory) {
         uint256 totalItem = _itemsID.current();
@@ -384,5 +364,17 @@ contract TicketMarket is ReentrancyGuard {
         uint256 item = tokenToItem[tokenId];
         return idMarketItem[item];
     }
+
+    function useTickets(uint256 [] memory tokenIds, uint256 eventId, address NftCont) public {
+        TicketMint tokenContract = TicketMint(NftCont);
+        require(tokenContract.eventIDtoeventOwner(eventId)==msg.sender, "Only event owner");
+
+        for (uint128 i=0 ; i< tokenIds.length;i++){
+            uint256 tokenId=tokenIds[i];
+            uint256 item = tokenToItem[tokenId];
+            idMarketItem[item].used = true;
+
+        }
+    } 
 
 }

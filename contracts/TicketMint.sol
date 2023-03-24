@@ -15,7 +15,7 @@ contract TicketMint is ERC721URIStorage, ERC721Burnable {
     mapping(address => bool) EventOwnerAddresses;
     mapping(uint256 => uint256[]) EventIDtotokenID;
     mapping(uint256 => uint256) tokenIDtoeventID;
-    mapping(uint256 => address) eventIDtoeventOwner;
+    mapping(uint256 => address) public eventIDtoeventOwner;
 
     constructor(address marketAddress) ERC721("Tickript", "Tic") {
         contractAddress = marketAddress;
