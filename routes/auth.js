@@ -52,9 +52,19 @@ router.post('/login', async (req, res) => {
       .verifyEventOwner(re.session.user.publicAddress)
       .call();
 
-    console.log('isWhitelisted:', isWhitelisted);
+    // Get eventIds of which the user is ticketConroller
+    const controlledEventIds = await MintContract.methods
+      .verifyTicketController(re.session.user.publicAddress)
+      .call();
 
-    res.json({ token: re.token, isWhitelisted: isWhitelisted }); //TODO: Change the structure
+    console.log('isWhitelisted:', isWhitelisted);
+    console.log('controlledEventIds:', controlledEventIds);
+
+    res.json({
+      token: re.token,
+      isWhitelisted: isWhitelisted,
+      controlledEventIds: controlledEventIds,
+    }); //TODO: Change the structure
     return;
   }
 
@@ -80,11 +90,18 @@ router.post('/login', async (req, res) => {
         .verifyEventOwner(user.publicAddress)
         .call();
 
+      // Get eventIds of which the user is ticketConroller
+      const controlledEventIds = await MintContract.methods
+        .verifyTicketController(re.session.user.publicAddress)
+        .call();
+
       console.log('isWhitelisted:', isWhitelisted);
+      console.log('controlledEventIds:', controlledEventIds);
 
       res.json({
         token: generateAccessToken(user.publicAddress),
         isWhitelisted: isWhitelisted,
+        controlledEventIds: controlledEventIds,
       });
     })
     .catch((err) => {
