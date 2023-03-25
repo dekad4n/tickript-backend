@@ -6,10 +6,7 @@ const ticketSchema = new Schema({
     type: Number,
     required: true,
   },
-  checked: {
-    type: Boolean,
-    required: true,
-  },
+
   controllerAddress: {
     type: String,
     required: true,

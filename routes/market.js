@@ -54,8 +54,9 @@ router.get('/market-items-all', async (req, res) => {
       ticketType: marketItem[7],
       sold: marketItem[8],
       soldBefore: marketItem[9],
-      seat: marketItem[10],
-      transferRight: parseInt(marketItem[11]),
+      used: marketItem[10],
+      seat: marketItem[11],
+      transferRight: parseInt(marketItem[12]),
     });
   });
 
@@ -224,23 +225,4 @@ router.post('/buy', auth, async (req, res) => {
   res.json(transactionParameters);
 });
 
-router.post('/use-tickets', auth, async (req, res) => {
-  const { tokenIds } = req.body;
-
-  let transactionParameters = {
-    to: ContractDetails.MarketContractAddress, // Required except during contract publications.
-    from: req.user.publicAddress, // must match user's active address.
-    // value: web3.utils.toWei('0.01', 'ether'),
-  };
-
-  ///TODO
-  const transaction = await marketContract.methods
-    .UseTickets(ContractDetails.ContractAddress, tokenIds)
-    .encodeABI();
-
-  transactionParameters['data'] = transaction;
-
-  res.json(transactionParameters);
-  return;
-});
 module.exports = router;

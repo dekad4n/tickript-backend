@@ -19,6 +19,7 @@ const { createAlchemyWeb3 } = require('@alch/alchemy-web3');
 const recoverPersonalSignature = require('eth-sig-util');
 
 const Ticket = require('../models/ticket');
+
 // Using HTTPS
 const web3 = createAlchemyWeb3(
   'https://polygon-mumbai.g.alchemy.com/v2/' + alchemyAPIKey
@@ -168,24 +169,55 @@ router.post('/is-ticket-checked', auth, async (req, res) => {
   // Did we check before
   if (!foundTicketInDB) {
     // we did not check before
+    // so add ticket to mongo, meaning that mark it checked
     await Ticket.create({
       tokenId: tokenId,
-      checked: true,
       controllerAddress: checkerPublicAddress.toLocaleLowerCase(),
     });
-    // You
+
     res.json({ value: false });
     return;
+  } else {
+    res.json({ value: true });
+    return;
   }
-  res.json({ value: true });
 });
 
 router.post('/change-ticket-used-state', auth, async (req, res) => {
-  const { tokenList } = req.body;
-  // marketItem.use(tokenList);
-  Ticket.deleteMany({
-    controllerAddress: req.user.publicAddress.toLocaleLowerCase(),
-  });
+  const { eventId } = req.body;
+  // marketItem.use(tokenIds);
+
+  const callerAddress = req.user.publicAddress.toLocaleLowerCase();
+
+  try {
+    // 0- Fetch checked ticket Ids (checked by the caller)
+    const checkedTokenIds = await Ticket.find({
+      controllerAddress: callerAddress,
+    });
+
+    // 1- Remove these temporarily stored tickets from mongo
+    Ticket.deleteMany({
+      controllerAddress: req.user.publicAddress.toLocaleLowerCase(),
+    });
+
+    // 2- Change chain state by calling contract function
+    // It will ensure only controllerAddress is able to call this function
+    // (msg.sender == controller)
+    let data = MarketContract.methods
+      .useTickets(checkedTokenIds, eventId, ContractDetails.ContractAddress)
+      .encodeABI();
+
+    transactionParameters = {
+      to: ContractDetails.MarketContractAddress, // Required except during contract publications.
+      from: req.user.publicAddress, // must match user's active address.
+      data: data,
+    };
+
+    console.log('SUCCESSFUL USE-TICKETS!');
+    res.json(transactionParameters);
+  } catch (e) {
+    console.log('FAILED USE-TICKET');
+  }
 });
 const uploadFromBuffer = async (buffer) => {
   try {
