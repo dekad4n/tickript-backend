@@ -367,7 +367,7 @@ contract TicketMarket is ReentrancyGuard {
 
     function useTickets(uint256 [] memory tokenIds, uint256 eventId, address NftCont) public {
         TicketMint tokenContract = TicketMint(NftCont);
-        require(tokenContract.eventIDtoeventOwner(eventId)==msg.sender, "Only event owner");
+        require(tokenContract.eventIDtoTicketControllers(eventId,msg.sender)==true, "Only ticket controller");
 
         for (uint128 i=0 ; i< tokenIds.length;i++){
             uint256 tokenId=tokenIds[i];

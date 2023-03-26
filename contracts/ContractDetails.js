@@ -1,7 +1,7 @@
 const ContractAddress =
-  '0x5109b4A8D08951433f40e389a490a691eDA7f483'.toLocaleLowerCase();
+  '0xE3cdd13A3a59CDc087A88015763b1d8f9A7D7642'.toLocaleLowerCase();
 const MarketContractAddress =
-  '0x8a72217aaC69E0495134444A7e608CD46A19Eab9'.toLocaleLowerCase();
+  '0xc087A3d76e0E7b94421F5CCaA9E4Af0658C3106F'.toLocaleLowerCase();
 module.exports = {
   ContractAddress,
   MarketContractAddress,

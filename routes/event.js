@@ -53,8 +53,6 @@ router.get('/get-random-event', async (req, res) => {
   res.json(result[0]);
 });
 
-
-
 router.get('/minted-event-ticket-tokens', async (req, res) => {
   const integerId = req.query['integerId'];
 
@@ -158,6 +156,31 @@ router.put('/update', auth, async (req, res) => {
     res.status(200);
     res.json({ ...updatedEvent, _id: event._id });
   });
+});
+
+router.post('/set-ticket-controller', auth, (req, res) => {
+  const { publicAddress, eventID } = req.body;
+  let data = MintContract.methods
+    .setTicketController(publicAddress, eventID)
+    .encodeABI();
+  let transactionParameters = {
+    data: data,
+    from: req.user.publicAddress,
+    to: ContractDetails.ContractAddress,
+  };
+  res.json(transactionParameters);
+});
+
+router.post('/is-ticket-controller', async (req, res) => {
+  const { publicAddress, eventID } = req.body;
+  try {
+    let state = await MintContract.methods
+      .verifyTicketController(publicAddress, eventID)
+      .call();
+    res.json(state);
+  } catch {
+    res.json(false);
+  }
 });
 
 let uploadFromBuffer = (buffer) => {

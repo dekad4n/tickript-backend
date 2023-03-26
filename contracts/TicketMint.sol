@@ -16,6 +16,8 @@ contract TicketMint is ERC721URIStorage, ERC721Burnable {
     mapping(uint256 => uint256[]) EventIDtotokenID;
     mapping(uint256 => uint256) tokenIDtoeventID;
     mapping(uint256 => address) public eventIDtoeventOwner;
+    mapping(uint256 => mapping(address => bool)) public eventIDtoTicketControllers;
+
 
     constructor(address marketAddress) ERC721("Tickript", "Tic") {
         contractAddress = marketAddress;
@@ -95,9 +97,17 @@ contract TicketMint is ERC721URIStorage, ERC721Burnable {
         EventOwnerAddresses[_address] = true;
     }
 
+    function setTicketController(address _address, uint256 eventId) public onlyEventOwner(eventId) {
+        eventIDtoTicketControllers[eventId][_address]=true;
+    }
+
     function verifyEventOwner(address _address) public view returns (bool){
         bool userIsWhitelisted = EventOwnerAddresses[_address];
         return userIsWhitelisted;
+    }
+
+    function verifyTicketController(address _address, uint256 eventId) public view returns (bool){
+        return eventIDtoTicketControllers[eventId][_address];
     }
 
     function getEventTicketList(uint eventid) public view returns( uint256 [] memory){
@@ -114,6 +124,11 @@ contract TicketMint is ERC721URIStorage, ERC721Burnable {
 
     modifier isEventOwner(address _address) {
         require(EventOwnerAddresses[_address], "You need to be whitelisted");
+        _;
+    }
+
+    modifier onlyEventOwner(uint256 eventId) {
+        require(eventIDtoeventOwner[eventId]==msg.sender, "Only contract owners!");
         _;
     }
 }
