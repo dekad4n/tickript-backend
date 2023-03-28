@@ -138,16 +138,21 @@ router.post('/mint', auth, uploadmw.any(), async (req, res) => {
 router.post('/is-ticket-checked', auth, async (req, res) => {
   const { tokenId, nonce, signature } = req.body;
   let ticket = await MarketContract.methods.NFTItem(tokenId).call();
-  const ticketOwner = ticket[3];
-  const eventOwner = ticket[4];
-  const checkerPublicAddress = req.user.publicAddress;
-  console.log(eventOwner);
-  console.log(checkerPublicAddress);
-  if (
-    eventOwner.toLocaleLowerCase() !== checkerPublicAddress.toLocaleLowerCase()
-  ) {
+  const isUsed = ticket['used'];
+  if (isUsed) {
     res.status(401);
-    res.json({ value: true, message: 'You are not the event owner!' });
+    res.json({ value: true, message: 'This ticket is used before!' });
+    return;
+  }
+  const eventId = ticket[2];
+  const ticketOwner = ticket[3];
+  const checkerPublicAddress = req.user.publicAddress;
+  let isChecker = await MintContract.methods
+    .verifyTicketController(checkerPublicAddress, eventId)
+    .call();
+  if (!isChecker) {
+    res.status(401);
+    res.json({ value: true, message: 'You are not the event controller!' });
     return;
   }
   const address = recoverPersonalSignature.recoverPersonalSignature({
@@ -161,7 +166,7 @@ router.post('/is-ticket-checked', auth, async (req, res) => {
     res.status(401);
     res.json({
       value: true,
-      message: 'The QR code creator is not the ticket owner',
+      message: 'The QR code creator is not the ticket owner!',
     });
     return;
   }
@@ -178,13 +183,13 @@ router.post('/is-ticket-checked', auth, async (req, res) => {
     res.json({ value: false });
     return;
   } else {
-    res.json({ value: true });
+    res.json({ value: true, message: 'This ticket is checked before!' });
     return;
   }
 });
 
 router.post('/change-ticket-used-state', auth, async (req, res) => {
-  const { eventId } = req.body;
+  const { eventID } = req.body;
   // marketItem.use(tokenIds);
 
   const callerAddress = req.user.publicAddress.toLocaleLowerCase();
@@ -199,14 +204,17 @@ router.post('/change-ticket-used-state', auth, async (req, res) => {
     Ticket.deleteMany({
       controllerAddress: req.user.publicAddress.toLocaleLowerCase(),
     });
-
+    console.log('burda mi hata');
+    let tokenIds = checkedTokenIds.map((e) => e.tokenId);
+    console.log(tokenIds);
+    console.log(eventID);
     // 2- Change chain state by calling contract function
     // It will ensure only controllerAddress is able to call this function
     // (msg.sender == controller)
-    let data = MarketContract.methods
-      .useTickets(checkedTokenIds, eventId, ContractDetails.ContractAddress)
+    let data = await MarketContract.methods
+      .useTickets(tokenIds, eventID, ContractDetails.ContractAddress)
       .encodeABI();
-
+    console.log('weer');
     transactionParameters = {
       to: ContractDetails.MarketContractAddress, // Required except during contract publications.
       from: req.user.publicAddress, // must match user's active address.
