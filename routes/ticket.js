@@ -57,7 +57,6 @@ router.get('/', async (req, res) => {
   }
 
   const result = await getNFTMetadata(ContractDetails.ContractAddress, token);
-  console.log('getNFTMetadata result:', result);
 
   if (Object.keys(result).length === 0) {
     res.status(404);
@@ -141,8 +140,7 @@ router.post('/is-ticket-checked', auth, async (req, res) => {
   const ticketOwner = ticket[3];
   const eventOwner = ticket[4];
   const checkerPublicAddress = req.user.publicAddress;
-  console.log(eventOwner);
-  console.log(checkerPublicAddress);
+
   if (
     eventOwner.toLocaleLowerCase() !== checkerPublicAddress.toLocaleLowerCase()
   ) {
