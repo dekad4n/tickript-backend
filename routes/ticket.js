@@ -57,7 +57,6 @@ router.get('/', async (req, res) => {
   }
 
   const result = await getNFTMetadata(ContractDetails.ContractAddress, token);
-  console.log('getNFTMetadata result:', result);
 
   if (Object.keys(result).length === 0) {
     res.status(404);
