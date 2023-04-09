@@ -23,6 +23,7 @@ const eventRoute = require('./routes/event');
 const utilsRoute = require('./routes/utils');
 const marketRoute = require('./routes/market');
 const categoryRoute = require('./routes/category');
+const auctionRoute = require('./routes/auction');
 var session = require('express-session');
 // app.use(cors)
 
@@ -60,6 +61,7 @@ app.use('/event', eventRoute);
 app.use('/utils', utilsRoute);
 app.use('/market', marketRoute);
 app.use('/category', categoryRoute);
+app.use('/auction', auctionRoute);
 
 const connectDB = (mongoose) => {
   mongoose

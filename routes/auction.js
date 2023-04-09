@@ -11,6 +11,10 @@ const auctionABI = require('../contracts/TicketAuction.json');
 
 const alchemyAPIKey = process.env['ALCHEMY_API_KEY'];
 const { createAlchemyWeb3 } = require('@alch/alchemy-web3');
+const web3 = createAlchemyWeb3(
+  'https://polygon-mumbai.g.alchemy.com/v2/' + alchemyAPIKey
+);
+const Auction = require('../models/auction');
 
 marketContract = new web3.eth.Contract(
   marketABI.abi,
@@ -26,25 +30,30 @@ const router = express.Router();
 
 // create auction
 router.post('/create-bid-item', auth, async (req, res) => {
-  const { ticketId, eventId, auctionId, startPrice, time } = req.body;
+  const { ticketId, eventId, startPrice, time } = req.body;
 
-  if (!ticketId || !eventId || !auctionId || !startPrice || !time) {
+  if (!ticketId || !eventId || !startPrice || !time) {
     res.status(400);
     res.json({ message: 'Inputs are not valid' });
     return;
   }
-
+  const auction = await Auction.create({
+    ticketId: ticketId,
+  });
   try {
     transaction = await auctionContract.methods
       .createBidItem(
         ticketId,
         eventId,
-        auctionId,
-        web3.utils.toWei(startPrice, 'ether'),
+        auction.auctionId,
+        web3.utils.toWei(startPrice.toString(), 'ether').toString(),
         time
       )
       .encodeABI();
-
+    let transactionParameters = {
+      from: req.user.publicAddress,
+      to: ContractDetails.AuctionContractAddress,
+    };
     transactionParameters['data'] = transaction;
 
     console.log(transactionParameters);
