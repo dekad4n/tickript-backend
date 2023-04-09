@@ -61,11 +61,18 @@ app.use('/utils', utilsRoute);
 app.use('/market', marketRoute);
 app.use('/category', categoryRoute);
 
-mongoose
-  .connect(process.env['MONGO_URI'])
-  .then(() => console.log('db connected'))
-  .catch((err) => console.log(err));
-
+const connectDB = (mongoose) => {
+  mongoose
+    .connect(process.env['MONGO_URI'])
+    .then(() => console.log('db connected'))
+    .catch((err) => {
+      setTimeout(() => {
+        connectDB();
+      }, 5000);
+    });
+};
+// Connect to DB Function
+connectDB(mongoose);
 // Bad Request Error
 app.use((error, req, res, next) => {
   console.log(error);

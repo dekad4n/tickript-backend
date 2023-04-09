@@ -146,6 +146,31 @@ contract TicketAuction is ReentrancyGuard {
         }
     }
 
+    function StopAuction(uint256 auctionId) public payable nonReentrant {
+        require(auctions[auctionId].seller == msg.sender, "only ticket seller");
+
+        address prevBidder = auctions[auctionId].highestBidder;
+        uint256 prevBid = auctions[auctionId].highestBid;
+
+        prevBids memory pre;
+        pre.bidder = prevBidder;
+        pre.bid = prevBid;
+        pre.isBack = false;
+
+        bids[auctionId].push(pre);
+
+        auctions[auctionId].highestBidder = msg.sender;
+        auctions[auctionId].highestBid = 0;
+        auctions[auctionId].ended = true;
+
+        mint.transferToken(
+                address(this),
+                auctions[auctionId].seller,
+                auctions[auctionId].ticketID
+            );
+
+    }
+
     function GetAuctionInfo(uint256 auctionId)
         public
         view

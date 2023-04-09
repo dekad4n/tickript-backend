@@ -8,9 +8,9 @@ COPY package*.json ./
 # RUN npm install
 
 RUN npm install
-
+RUN npm install -g pm2
 COPY . .
 
 # Open server
 EXPOSE 8080
-CMD [ "node", "server.js" ]
+CMD [ "pm2-runtime", "server.js" ]

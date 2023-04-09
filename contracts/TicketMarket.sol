@@ -183,7 +183,15 @@ contract TicketMarket is ReentrancyGuard {
         }
         return items;
     }
-
+    function isTransferable ( uint256 ticketId) public view returns (bool) {
+        uint256 item = tokenToItem[ticketId];
+        if(idMarketItem[item].transferRight > 0){
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
     ////This function operates stopping a batch ticket sale
     function StopBatchSale( uint128 price, address NftCont, uint256[] memory tokenIds, uint256 eventid) public payable nonReentrant {
         TicketMint tokenContract = TicketMint(NftCont);
