@@ -28,6 +28,32 @@ auctionContract = new web3.eth.Contract(
 
 const router = express.Router();
 
+// get ongoing auctions of a given eventId
+router.get('/auctions', async (req, res) => {
+  const eventId = req.query.eventId;
+
+  if (!eventId) {
+    res.status(400);
+    res.json({ message: 'Inputs are not valid' });
+    return;
+  }
+
+  try {
+    const auctionsOngoing = await Auction.find({
+      eventId: eventId,
+      finished: false,
+    });
+
+    res.json(auctionsOngoing);
+    return;
+  } catch (err) {
+    console.error(err);
+    res.status(500);
+    res.json({ message: 'Failed to get auctions' });
+    return;
+  }
+});
+
 // create auction
 router.post('/create-bid-item', auth, async (req, res) => {
   const { ticketId, eventId, startPrice, time } = req.body;
@@ -39,6 +65,7 @@ router.post('/create-bid-item', auth, async (req, res) => {
   }
   const auction = await Auction.create({
     ticketId: ticketId,
+    eventId: eventId,
   });
   try {
     transaction = await auctionContract.methods
@@ -110,6 +137,19 @@ router.get('/get-auction', auth, async (req, res) => {
     const auction = await auctionContract.methods
       .GetAuctionInfo(auctionId)
       .call();
+
+    //   struct AuctionInfo {
+    //     uint256 ticketID;
+    //     uint256 eventID;
+    //     uint256 auctionID;
+    //     address payable seller;
+    //     uint256 endAt;
+    //     bool started;
+    //     bool ended;
+    //     address highestBidder;
+    //     uint256 highestBid;
+    //     uint256 startingPrice;
+    //
     res.json(auction);
     return;
   } catch (err) {
@@ -133,6 +173,15 @@ router.get('/list-prev-bids', auth, async (req, res) => {
     const prevBids = await auctionContract.methods
       .listPrevBids(auctionId)
       .call();
+
+    // [
+    //   {bidder: "0x123123123", bid: 0, isBack: false},
+    //   {bidder: "0x123123123", bid: 0, isBack: false},
+    //   {bidder: "0x123123123", bid: 0, isBack: false},
+    //   {bidder: "0x123123123", bid: 0, isBack: false},
+    //   {bidder: "0x123123123", bid: 0, isBack: false},
+    // ]
+
     res.json(prevBids);
     return;
   } catch (err) {

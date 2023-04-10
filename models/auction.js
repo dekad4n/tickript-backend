@@ -9,6 +9,13 @@ const auctionSchema = new Schema({
   auctionId: {
     type: Number,
   },
+  eventId: {
+    type: Number,
+  },
+  finished: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 auctionSchema.plugin(AutoIncrement, {
