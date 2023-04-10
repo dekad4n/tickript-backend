@@ -29,8 +29,8 @@ auctionContract = new web3.eth.Contract(
 const router = express.Router();
 
 // get ongoing auctions of a given eventId
-router.get('/auctions', async (req, res) => {
-  const eventId = req.query.eventId;
+router.get('/ongoing/:eventId', async (req, res) => {
+  const { eventId } = req.params;
 
   if (!eventId) {
     res.status(400);
@@ -59,14 +59,31 @@ router.post('/create-bid-item', auth, async (req, res) => {
   const { ticketId, eventId, startPrice, time } = req.body;
 
   if (!ticketId || !eventId || !startPrice || !time) {
+    console.log('Inputs are not valid');
     res.status(400);
     res.json({ message: 'Inputs are not valid' });
     return;
   }
+
+  // Check if ticket is already on auction
+  const doesAuctionExist = await Auction.findOne({
+    ticketId: ticketId,
+  });
+
+  if (doesAuctionExist) {
+    console.log('Ticket is already on auction');
+    res.status(400);
+
+    res.json({ message: 'Ticket is already on auction' });
+    return;
+  }
+
+  // Create auction in mongodb
   const auction = await Auction.create({
     ticketId: ticketId,
     eventId: eventId,
   });
+
   try {
     transaction = await auctionContract.methods
       .createBidItem(
@@ -124,7 +141,7 @@ router.post('/stop-auction', auth, async (req, res) => {
   }
 });
 
-router.get('/get-auction', auth, async (req, res) => {
+router.get('/get-auction', async (req, res) => {
   const { auctionId } = req.query;
 
   if (!auctionId) {
