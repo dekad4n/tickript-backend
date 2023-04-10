@@ -65,9 +65,12 @@ router.post('/create-bid-item', auth, async (req, res) => {
     return;
   }
 
+  let createdAuction;
+
   // Check if ticket is already on auction
   const doesAuctionExist = await Auction.findOne({
     ticketId: ticketId,
+    finished: false,
   });
 
   if (doesAuctionExist) {
@@ -79,7 +82,7 @@ router.post('/create-bid-item', auth, async (req, res) => {
   }
 
   // Create auction in mongodb
-  const auction = await Auction.create({
+  createdAuction = await Auction.create({
     ticketId: ticketId,
     eventId: eventId,
   });
@@ -104,6 +107,9 @@ router.post('/create-bid-item', auth, async (req, res) => {
     res.json(transactionParameters);
     return;
   } catch (err) {
+    // If something goes wrong, delete the created auction from mongodb
+    if (createdAuction) await Auction.findByIdAndDelete(createdAuction._id);
+
     console.log(err);
     res.status(500);
     res.json({ message: 'Failed to start auction' });
@@ -121,6 +127,12 @@ router.post('/stop-auction', auth, async (req, res) => {
   }
 
   try {
+    // Update mongodb: set finished to true
+    await Auction.findOneAndUpdate(
+      { auctionId: auctionId },
+      { finished: true }
+    );
+
     transaction = await auctionContract.methods
       .StopAuction(auctionId)
       .encodeABI();
