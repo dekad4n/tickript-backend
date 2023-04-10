@@ -151,22 +151,23 @@ router.get('/get-auction', async (req, res) => {
   }
 
   try {
-    const auction = await auctionContract.methods
+    let auction = await auctionContract.methods
       .GetAuctionInfo(auctionId)
       .call();
 
-    //   struct AuctionInfo {
-    //     uint256 ticketID;
-    //     uint256 eventID;
-    //     uint256 auctionID;
-    //     address payable seller;
-    //     uint256 endAt;
-    //     bool started;
-    //     bool ended;
-    //     address highestBidder;
-    //     uint256 highestBid;
-    //     uint256 startingPrice;
-    //
+    auction = {
+      ticketId: auction[0],
+      eventId: auction[1],
+      auctionId: auction[2],
+      seller: auction[3],
+      endAt: auction[4],
+      started: auction[5],
+      ended: auction[6],
+      highestBidder: auction[7],
+      highestBid: web3.utils.fromWei(auction[8], 'ether'),
+      startingPrice: web3.utils.fromWei(auction[9], 'ether'),
+    };
+
     res.json(auction);
     return;
   } catch (err) {
@@ -217,14 +218,19 @@ router.post('/bid', auth, async (req, res) => {
     res.json({ message: 'Inputs are not valid' });
     return;
   }
+  console.log(bidPrice);
 
   try {
-    transaction = await auctionContract.methods.placeBid(auctionId).encodeABI();
+    const transaction = await auctionContract.methods
+      .placeBid(auctionId)
+      .encodeABI();
+
     let transactionParameters = {
       from: req.user.publicAddress,
       to: ContractDetails.AuctionContractAddress,
-      value:
-        bidPrice ?? web3.utils.toWei(bidPrice.toString(), 'ether').toString(),
+      value: parseInt(web3.utils.toWei(bidPrice.toString(), 'ether')).toString(
+        16
+      ),
     };
     transactionParameters['data'] = transaction;
 
