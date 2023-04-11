@@ -28,7 +28,7 @@ auctionContract = new web3.eth.Contract(
 
 const router = express.Router();
 
-// get active auctions with their info from chain, by event id
+// get auctions (both active/finished) with their info from chain, by event id
 router.get('/auctions-by-event-id/:eventId', async (req, res) => {
   const { eventId } = req.params;
 
@@ -74,7 +74,7 @@ router.get('/auctions-by-event-id/:eventId', async (req, res) => {
     }
 
     auctions = auctions.filter((auction) => {
-      return (auction._doc.started == true) & (auction._doc.ended == false);
+      return auction._doc.started == true;
     });
 
     res.json(auctions);
@@ -210,9 +210,15 @@ router.get('/list-prev-bids', auth, async (req, res) => {
   }
 
   try {
-    const prevBids = await auctionContract.methods
-      .listPrevBids(auctionId)
-      .call();
+    let prevBids = await auctionContract.methods.listPrevBids(auctionId).call();
+
+    prevBids = prevBids.map((bid) => {
+      return {
+        bidder: bid[0],
+        bid: parseFloat(web3.utils.fromWei(bid[1], 'ether')),
+        isBack: bid[2],
+      };
+    });
 
     // [
     //   {bidder: "0x123123123", bid: 0, isBack: false},
@@ -222,7 +228,7 @@ router.get('/list-prev-bids', auth, async (req, res) => {
     //   {bidder: "0x123123123", bid: 0, isBack: false},
     // ]
 
-    res.json(prevBids);
+    res.json({ prevBids });
     return;
   } catch (err) {
     console.log(err);
@@ -240,7 +246,6 @@ router.post('/bid', auth, async (req, res) => {
     res.json({ message: 'Inputs are not valid' });
     return;
   }
-  console.log(bidPrice);
 
   try {
     const transaction = await auctionContract.methods
