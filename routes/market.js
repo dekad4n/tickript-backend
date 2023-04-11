@@ -25,11 +25,32 @@ const isHex = (num) => {
 router.get('/market-item', async (req, res) => {
   const tokenId = req.query.tokenId;
 
-  const data = await marketContract.methods.NFTItem(tokenId).call();
+  try {
+    const data = await marketContract.methods.NFTItem(tokenId).call();
 
-  console.log(data);
-  res.json('ok');
-  return;
+    const marketItem = {
+      nftContract: data[0],
+      tokenID: parseInt(data[1]),
+      eventID: parseInt(data[2]),
+      ticketOwner: data[3],
+      eventOwner: data[4],
+      seller: data[5],
+      price: parseFloat(web3.utils.fromWei(data[6], 'ether')),
+      ticketType: data[7],
+      sold: data[8],
+      soldBefore: data[9],
+      used: data[10],
+      seat: data[11],
+      transferRight: parseInt(data[12]),
+    };
+
+    res.json({ marketItem });
+    return;
+  } catch (err) {
+    console.log(err);
+    res.status(400).json(err);
+    return;
+  }
 });
 
 // To get all MarketItems (sold & onsale) belong to a given eventId
