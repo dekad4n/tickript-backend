@@ -28,8 +28,8 @@ auctionContract = new web3.eth.Contract(
 
 const router = express.Router();
 
-// get ongoing auctions of a given eventId
-router.get('/ongoing/:eventId', async (req, res) => {
+// get active auctions with their info from chain, by event id
+router.get('/auctions-by-event-id/:eventId', async (req, res) => {
   const { eventId } = req.params;
 
   if (!eventId) {
@@ -39,12 +39,45 @@ router.get('/ongoing/:eventId', async (req, res) => {
   }
 
   try {
-    const auctionsOngoing = await Auction.find({
-      eventId: eventId,
-      finished: false,
+    let auctions = await Auction.find({ eventId: eventId });
+
+    // Fetch details from blockchain for each auction
+
+    for (const auction of auctions) {
+      let auctionInfo = await auctionContract.methods
+        .GetAuctionInfo(auction.auctionId)
+        .call();
+
+      auctionInfo = {
+        ticketId: parseInt(auctionInfo[0]),
+        eventId: parseInt(auctionInfo[1]),
+        auctionId: parseInt(auctionInfo[2]),
+        seller: auctionInfo[3],
+        endAt: auctionInfo[4],
+        started: auctionInfo[5],
+        ended: auctionInfo[6],
+        highestBidder: auctionInfo[7],
+        highestBid: parseFloat(web3.utils.fromWei(auctionInfo[8], 'ether')),
+        startingPrice: parseFloat(web3.utils.fromWei(auctionInfo[9], 'ether')),
+      };
+
+      auction._doc.ticketId = auctionInfo.ticketId;
+      auction._doc.eventId = auctionInfo.eventId;
+      auction._doc.auctionId = auctionInfo.auctionId;
+      auction._doc.seller = auctionInfo.seller;
+      auction._doc.endAt = auctionInfo.endAt;
+      auction._doc.started = auctionInfo.started;
+      auction._doc.ended = auctionInfo.ended;
+      auction._doc.highestBidder = auctionInfo.highestBidder;
+      auction._doc.highestBid = auctionInfo.highestBid;
+      auction._doc.startingPrice = auctionInfo.startingPrice;
+    }
+
+    auctions = auctions.filter((auction) => {
+      return (auction._doc.started == true) & (auction._doc.ended == false);
     });
 
-    res.json(auctionsOngoing);
+    res.json(auctions);
     return;
   } catch (err) {
     console.error(err);
@@ -65,29 +98,12 @@ router.post('/create-bid-item', auth, async (req, res) => {
     return;
   }
 
-  let createdAuction;
-
-  // Check if ticket is already on auction
-  const doesAuctionExist = await Auction.findOne({
-    ticketId: ticketId,
-    finished: false,
-  });
-
-  if (doesAuctionExist) {
-    console.log('Ticket is already on auction');
-    res.status(400);
-
-    res.json({ message: 'Ticket is already on auction' });
-    return;
-  }
-
-  // Create auction in mongodb
-  createdAuction = await Auction.create({
-    ticketId: ticketId,
-    eventId: eventId,
-  });
-
   try {
+    // Create auction in mongodb
+    const auction = await Auction.create({
+      eventId: eventId,
+    });
+
     transaction = await auctionContract.methods
       .createBidItem(
         ticketId,
@@ -107,9 +123,6 @@ router.post('/create-bid-item', auth, async (req, res) => {
     res.json(transactionParameters);
     return;
   } catch (err) {
-    // If something goes wrong, delete the created auction from mongodb
-    if (createdAuction) await Auction.findByIdAndDelete(createdAuction._id);
-
     console.log(err);
     res.status(500);
     res.json({ message: 'Failed to start auction' });
@@ -128,14 +141,11 @@ router.post('/stop-auction', auth, async (req, res) => {
 
   try {
     // Update mongodb: set finished to true
-    await Auction.findOneAndUpdate(
-      { auctionId: auctionId },
-      { finished: true }
-    );
 
-    transaction = await auctionContract.methods
+    const transaction = await auctionContract.methods
       .StopAuction(auctionId)
       .encodeABI();
+
     let transactionParameters = {
       from: req.user.publicAddress,
       to: ContractDetails.AuctionContractAddress,

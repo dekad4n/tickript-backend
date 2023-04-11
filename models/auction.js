@@ -3,18 +3,11 @@ var AutoIncrement = require('mongoose-sequence')(mongoose);
 const Schema = mongoose.Schema;
 
 const auctionSchema = new Schema({
-  ticketId: {
-    type: Number,
-  },
   auctionId: {
     type: Number,
   },
   eventId: {
     type: Number,
-  },
-  finished: {
-    type: Boolean,
-    default: false,
   },
 });
 
